@@ -1,0 +1,16 @@
+name = "lms-telegram-bot"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+# Замените YOUR_DATABASE_ID на реальный ID после создания базы
+[[d1_databases]]
+binding = "DB"
+database_name = "lms-database"
+database_id = "YOUR_DATABASE_ID"
+
+# Переменные окружения - заполните реальными значениями
+[vars]
+TELEGRAM_BOT_TOKEN = "your_bot_token_here"
+TELEGRAM_ADMIN_ID = "your_telegram_id_here"
+ADMIN_LOGIN = "admin"
+ADMIN_PASSWORD = "your_secure_password_here" 

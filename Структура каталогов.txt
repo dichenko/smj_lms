@@ -1,0 +1,25 @@
+lms-tg-cloudflare/
+├── backend/
+│   ├── worker.js              # Cloudflare Worker: API и Telegram webhook
+│   ├── db/
+│   │   ├── migrations.sql     # Схема и миграции базы данных D1
+│   │   └── utils.js           # Утилиты для работы с D1
+│   ├── telegram/
+│   │   ├── bot.js             # Telegram webhook, парсер сообщений
+│   │   └── notifications.js   # Рассылка уведомлений ученикам
+│   └── api/
+│       ├── students.js        # CRUD для учеников
+│       ├── courses.js         # CRUD для курсов
+│       ├── lessons.js         # CRUD для уроков
+│       ├── reports.js         # Проверка и список отчетов
+│       └── stats.js           # Отчеты и статистика
+├── frontend/
+│   ├── public/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── api/               # Клиентские вызовы к backend API
+│   │   └── App.jsx
+│   └── package.json
+├── README.md
+└── .env.example
