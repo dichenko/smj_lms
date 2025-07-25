@@ -22,19 +22,31 @@ wrangler d1 create lms-database
 Скопируйте `database_id` из вывода команды.
 
 ### Настройка wrangler.toml
-В файле `backend/wrangler.toml` замените:
-- `YOUR_DATABASE_ID` на реальный ID базы данных
-- Заполните переменные окружения реальными значениями
+Файл `backend/wrangler.toml` уже настроен безопасно. Секретные данные будут добавлены через команды wrangler.
 
 ### Выполнение миграций
 ```bash
 wrangler d1 execute lms-database --file=database/schema.sql
 ```
 
-## Шаг 2: Деплой Backend
+## Шаг 2: Настройка секретов и деплой Backend
 
+### Установка секретов
 ```bash
 cd backend
+
+# Установка секретов (замените на реальные значения)
+wrangler secret put TELEGRAM_BOT_TOKEN
+wrangler secret put TELEGRAM_ADMIN_ID  
+wrangler secret put ADMIN_PASSWORD
+
+# Обновление database_id в wrangler.toml
+# Замените YOUR_DATABASE_ID на реальный ID из предыдущего шага
+wrangler d1 execute lms-database --command="SELECT 1" # Проверка подключения
+```
+
+### Деплой
+```bash
 npm install
 wrangler publish
 ```
