@@ -1,5 +1,7 @@
 # Настройка Cloudflare Workers и D1
 
+⚠️ **Важно**: Секретные данные (токены, пароли, ID базы) НЕ хранятся в коде репозитория и устанавливаются безопасно через команды `wrangler secret put`.
+
 ## Шаг 1: Установка Wrangler CLI
 
 ```bash
@@ -18,41 +20,37 @@ wrangler d1 create lms-database
 
 ## Шаг 3: Настройка wrangler.toml
 
-Создайте файл `backend/wrangler.toml`:
+Файл `backend/wrangler.toml` уже создан с безопасной конфигурацией. Секретные данные будут добавлены через команды wrangler.
 
-```toml
-name = "lms-telegram-bot"
-main = "worker.js"
-compatibility_date = "2024-01-01"
+## Шаг 4: Установка секретов
 
-# Замените YOUR_DATABASE_ID на ID из предыдущего шага
-[[d1_databases]]
-binding = "DB"
-database_name = "lms-database"  
-database_id = "YOUR_DATABASE_ID"
+```bash
+cd backend
 
-[vars]
-TELEGRAM_BOT_TOKEN = "your_bot_token"
-TELEGRAM_ADMIN_ID = "your_telegram_id"
-ADMIN_LOGIN = "admin"
-ADMIN_PASSWORD = "your_password"
+# Установка секретов (замените на реальные значения)
+wrangler secret put TELEGRAM_BOT_TOKEN
+wrangler secret put TELEGRAM_ADMIN_ID  
+wrangler secret put ADMIN_PASSWORD
+
+# Обновление database_id в wrangler.toml
+# Замените YOUR_DATABASE_ID на реальный ID из шага 2
 ```
 
-## Шаг 4: Выполнение миграций
+## Шаг 5: Выполнение миграций
 
 ```bash
 # Находясь в корне проекта
 wrangler d1 execute lms-database --file=database/schema.sql
 ```
 
-## Шаг 5: Деплой Worker
+## Шаг 6: Деплой Worker
 
 ```bash
 cd backend
 wrangler publish
 ```
 
-## Шаг 6: Настройка Telegram Webhook
+## Шаг 7: Настройка Telegram Webhook
 
 После деплоя получите URL вашего Worker и установите webhook:
 
@@ -63,7 +61,7 @@ curl -X POST "https://api.telegram.org/botYOUR_BOT_TOKEN/setWebhook" \
      -d '{"url": "https://YOUR_WORKER_URL.workers.dev/api/telegram/webhook"}'
 ```
 
-## Шаг 7: Настройка Frontend (Cloudflare Pages)
+## Шаг 8: Настройка Frontend (Cloudflare Pages)
 
 1. Подключите репозиторий к Cloudflare Pages
 2. Настройте build settings:
