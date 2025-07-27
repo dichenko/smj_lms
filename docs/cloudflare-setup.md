@@ -30,7 +30,7 @@ wrangler d1 create lms-database
 ## Шаг 4: Создайте таблицы в базе
 
 ```bash
-wrangler d1 execute lms-database --file=../database/schema.sql
+wrangler d1 execute lms-database --file=database/schema.sql --remote
 ```
 
 ## Шаг 5: Деплой Worker
