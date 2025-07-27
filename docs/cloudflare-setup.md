@@ -66,12 +66,10 @@ wrangler secret put ADMIN_PASSWORD
 
 ## Шаг 8: Подключите бота
 
-Замените `YOUR_BOT_TOKEN` и `YOUR_WORKER_URL`:
+Откройте в браузере эту ссылку, заменив `YOUR_BOT_TOKEN` и `YOUR_WORKER_URL`:
 
-```bash
-curl -X POST "https://api.telegram.org/botYOUR_BOT_TOKEN/setWebhook" \
-     -H "Content-Type: application/json" \
-     -d '{"url": "https://YOUR_WORKER_URL.workers.dev/api/telegram/webhook"}'
+```
+https://api.telegram.org/botYOUR_BOT_TOKEN/setWebhook?url=https://YOUR_WORKER_URL.workers.dev/api/telegram/webhook
 ```
 
 ## Шаг 9: Деплой админки
