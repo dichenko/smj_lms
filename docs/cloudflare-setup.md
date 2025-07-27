@@ -27,24 +27,26 @@ wrangler d1 create lms-database
 ```
 **Скопируйте database_id из вывода!**
 
-## Шаг 4: Установите database_id
-
-```bash
-cd backend
-wrangler secret put DATABASE_ID
-# Вставьте ваш database_id когда попросит
-```
-
-## Шаг 5: Создайте таблицы в базе
+## Шаг 4: Создайте таблицы в базе
 
 ```bash
 wrangler d1 execute lms-database --file=database/schema.sql
 ```
 
-## Шаг 6: Установите переменные
+## Шаг 5: Деплой Worker
 
 ```bash
 cd backend
+wrangler publish
+```
+
+## Шаг 6: Установите секреты
+
+```bash
+# Теперь когда Worker создан, устанавливаем секреты
+
+wrangler secret put DATABASE_ID
+# Вставьте ваш database_id
 
 wrangler secret put TELEGRAM_BOT_TOKEN
 # Вставьте токен бота
@@ -56,15 +58,7 @@ wrangler secret put ADMIN_PASSWORD
 # Придумайте пароль для админки
 ```
 
-## Шаг 7: Деплой Worker
-
-```bash
-wrangler publish
-```
-
-**Скопируйте URL воркера из вывода!**
-
-## Шаг 8: Подключите бота
+## Шаг 7: Подключите бота
 
 Замените `YOUR_BOT_TOKEN` и `YOUR_WORKER_URL`:
 
@@ -74,7 +68,7 @@ curl -X POST "https://api.telegram.org/botYOUR_BOT_TOKEN/setWebhook" \
      -d '{"url": "https://YOUR_WORKER_URL.workers.dev/api/telegram/webhook"}'
 ```
 
-## Шаг 9: Деплой админки
+## Шаг 8: Деплой админки
 
 1. Зайдите в Cloudflare Pages
 2. Подключите ваш GitHub репозиторий
