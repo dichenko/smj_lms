@@ -39,14 +39,14 @@ database_id = "ваш-реальный-database-id-здесь"
 ## Шаг 5: Создайте таблицы в базе
 
 ```bash
-wrangler d1 execute lms-database --file=database/schema.sql --remote
+wrangler d1 execute lms-database --file=../database/schema.sql --remote
 ```
 
 ## Шаг 6: Деплой Worker
 
 ```bash
 cd backend
-wrangler publish
+wrangler deploy
 ```
 
 ## Шаг 7: Установите секреты
