@@ -1,4 +1,4 @@
-# Простая инструкция по деплою на Cloudflare
+# Инструкция по деплою на Cloudflare
 
 ## Шаг 1: Подготовка токенов
 
@@ -25,28 +25,34 @@ wrangler login
 ```bash
 wrangler d1 create lms-database
 ```
+
 **Скопируйте database_id из вывода!**
 
-## Шаг 4: Создайте таблицы в базе
+## Шаг 4: Настройте wrangler.toml
+
+Откройте файл `backend/wrangler.toml` и замените `${DATABASE_ID}` на ваш реальный database_id:
+
+```toml
+database_id = "ваш-реальный-database-id-здесь"
+```
+
+## Шаг 5: Создайте таблицы в базе
 
 ```bash
 wrangler d1 execute lms-database --file=database/schema.sql --remote
 ```
 
-## Шаг 5: Деплой Worker
+## Шаг 6: Деплой Worker
 
 ```bash
 cd backend
 wrangler publish
 ```
 
-## Шаг 6: Установите секреты
+## Шаг 7: Установите секреты
 
 ```bash
-# Теперь когда Worker создан, устанавливаем секреты
-
-wrangler secret put DATABASE_ID
-# Вставьте ваш database_id
+cd backend
 
 wrangler secret put TELEGRAM_BOT_TOKEN
 # Вставьте токен бота
@@ -58,7 +64,7 @@ wrangler secret put ADMIN_PASSWORD
 # Придумайте пароль для админки
 ```
 
-## Шаг 7: Подключите бота
+## Шаг 8: Подключите бота
 
 Замените `YOUR_BOT_TOKEN` и `YOUR_WORKER_URL`:
 
@@ -68,7 +74,7 @@ curl -X POST "https://api.telegram.org/botYOUR_BOT_TOKEN/setWebhook" \
      -d '{"url": "https://YOUR_WORKER_URL.workers.dev/api/telegram/webhook"}'
 ```
 
-## Шаг 8: Деплой админки
+## Шаг 9: Деплой админки
 
 1. Зайдите в Cloudflare Pages
 2. Подключите ваш GitHub репозиторий
