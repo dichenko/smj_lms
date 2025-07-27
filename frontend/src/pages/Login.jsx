@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Lock, User } from 'lucide-react'
-import { createBasicAuth } from '../api/client'
+import { createBasicAuth } from '../api/client.js'
 
 function Login({ onLogin }) {
   const [credentials, setCredentials] = useState({

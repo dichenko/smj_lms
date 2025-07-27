@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
-import Layout from './components/Layout'
-import Login from './pages/Login'
-import Dashboard from './pages/Dashboard'
-import Students from './pages/Students'
-import Courses from './pages/Courses'
-import Reports from './pages/Reports'
-import { apiClient } from './api/client'
+import Layout from './components/Layout.jsx'
+import Login from './pages/Login.jsx'
+import Dashboard from './pages/Dashboard.jsx'
+import Students from './pages/Students.jsx'
+import Courses from './pages/Courses.jsx'
+import Reports from './pages/Reports.jsx'
+import { apiClient } from './api/client.js'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
