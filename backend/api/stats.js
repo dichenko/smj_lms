@@ -28,43 +28,33 @@ export async function handleStatsAPI(request, env, path) {
   return errorResponse('Not found', 404);
 }
 
-// Статистика по курсам
+// Получить статистику по курсам
 async function getCoursesStats(db) {
   try {
     const stmt = db.prepare(`
       SELECT 
         c.id,
         c.title,
-        COUNT(DISTINCT s.id) as total_students,
-        COUNT(DISTINCT l.id) as total_lessons,
-        COUNT(DISTINCT CASE WHEN r.status = 'approved' THEN r.id END) as approved_reports,
-        COUNT(DISTINCT CASE WHEN r.status = 'pending' THEN r.id END) as pending_reports,
-        COUNT(DISTINCT CASE WHEN r.status = 'rejected' THEN r.id END) as rejected_reports,
-        ROUND(
-          CASE 
-            WHEN COUNT(DISTINCT l.id) * COUNT(DISTINCT s.id) > 0 
-            THEN (COUNT(DISTINCT CASE WHEN r.status = 'approved' THEN r.id END) * 100.0) / 
-                 (COUNT(DISTINCT l.id) * COUNT(DISTINCT s.id))
-            ELSE 0 
-          END, 2
-        ) as completion_percentage
+        COUNT(DISTINCT s.id) as students_count,
+        COUNT(DISTINCT l.id) as lessons_count,
+        COUNT(DISTINCT r.id) as reports_count
       FROM courses c
       LEFT JOIN students s ON c.id = s.course_id
       LEFT JOIN lessons l ON c.id = l.course_id
-      LEFT JOIN reports r ON l.id = r.lesson_id AND s.id = r.student_id
+      LEFT JOIN reports r ON s.id = r.student_id
       GROUP BY c.id, c.title
       ORDER BY c.title
     `);
 
     const coursesStats = await stmt.all();
-    return jsonResponse(coursesStats);
+    return jsonResponse(coursesStats.results || []);
   } catch (error) {
     console.error('Error getting courses stats:', error);
     return errorResponse('Database error', 500);
   }
 }
 
-// Статистика по студентам
+// Получить статистику по студентам
 async function getStudentsStats(db) {
   try {
     const stmt = db.prepare(`
@@ -74,46 +64,38 @@ async function getStudentsStats(db) {
         s.tg_id,
         c.title as course_title,
         s.active_lesson,
-        COUNT(DISTINCT l.id) as total_lessons,
-        COUNT(DISTINCT CASE WHEN r.status = 'approved' THEN r.id END) as completed_lessons,
-        COUNT(DISTINCT CASE WHEN r.status = 'pending' THEN r.id END) as pending_reports,
-        COUNT(DISTINCT CASE WHEN r.status = 'rejected' THEN r.id END) as rejected_reports,
-        ROUND(
-          CASE 
-            WHEN COUNT(DISTINCT l.id) > 0 
-            THEN (COUNT(DISTINCT CASE WHEN r.status = 'approved' THEN r.id END) * 100.0) / COUNT(DISTINCT l.id)
-            ELSE 0 
-          END, 2
-        ) as progress_percentage,
-        MAX(r.submitted_at) as last_activity
+        COUNT(r.id) as reports_count,
+        COUNT(CASE WHEN r.status = 'approved' THEN 1 END) as approved_reports,
+        COUNT(CASE WHEN r.status = 'rejected' THEN 1 END) as rejected_reports,
+        MAX(r.submitted_at) as last_report_date
       FROM students s
       LEFT JOIN courses c ON s.course_id = c.id
-      LEFT JOIN lessons l ON c.id = l.course_id
       LEFT JOIN reports r ON s.id = r.student_id
       GROUP BY s.id, s.name, s.tg_id, c.title, s.active_lesson
       ORDER BY s.name
     `);
 
     const studentsStats = await stmt.all();
-    return jsonResponse(studentsStats);
+    return jsonResponse(studentsStats.results || []);
   } catch (error) {
     console.error('Error getting students stats:', error);
     return errorResponse('Database error', 500);
   }
 }
 
-// Общая статистика для дашборда
+// Получить статистику для дашборда
 async function getDashboardStats(db) {
   try {
-    // Общие цифры
+    // Общая статистика
     const overallStmt = db.prepare(`
       SELECT 
         (SELECT COUNT(*) FROM students) as total_students,
         (SELECT COUNT(*) FROM courses) as total_courses,
         (SELECT COUNT(*) FROM lessons) as total_lessons,
-        (SELECT COUNT(*) FROM reports WHERE status = 'pending') as pending_reports,
+        (SELECT COUNT(*) FROM reports) as total_reports,
         (SELECT COUNT(*) FROM reports WHERE status = 'approved') as approved_reports,
-        (SELECT COUNT(*) FROM reports WHERE status = 'rejected') as rejected_reports
+        (SELECT COUNT(*) FROM reports WHERE status = 'rejected') as rejected_reports,
+        (SELECT COUNT(*) FROM reports WHERE status = 'pending') as pending_reports
     `);
     const overall = await overallStmt.first();
 
@@ -146,8 +128,8 @@ async function getDashboardStats(db) {
 
     return jsonResponse({
       overall,
-      recent_activity: recentActivity,
-      top_students: topStudents
+      recent_activity: recentActivity.results || [],
+      top_students: topStudents.results || []
     });
   } catch (error) {
     console.error('Error getting dashboard stats:', error);

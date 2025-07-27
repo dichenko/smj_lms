@@ -48,7 +48,7 @@ async function getStudents(db) {
       ORDER BY s.created_at DESC
     `);
     const students = await stmt.all();
-    return jsonResponse(students);
+    return jsonResponse(students.results || []);
   } catch (error) {
     console.error('Error getting students:', error);
     return errorResponse('Database error', 500);

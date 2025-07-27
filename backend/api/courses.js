@@ -48,16 +48,16 @@ async function getCourses(db) {
   try {
     const stmt = db.prepare(`
       SELECT c.*, 
-             COUNT(DISTINCT s.id) as students_count,
-             COUNT(DISTINCT l.id) as lessons_count
-      FROM courses c
-      LEFT JOIN students s ON c.id = s.course_id
-      LEFT JOIN lessons l ON c.id = l.course_id
-      GROUP BY c.id
+        COUNT(s.id) as students_count,
+        COUNT(l.id) as lessons_count
+      FROM courses c 
+      LEFT JOIN students s ON c.id = s.course_id 
+      LEFT JOIN lessons l ON c.id = l.course_id 
+      GROUP BY c.id, c.title, c.description, c.created_at 
       ORDER BY c.created_at DESC
     `);
     const courses = await stmt.all();
-    return jsonResponse(courses);
+    return jsonResponse(courses.results || []);
   } catch (error) {
     console.error('Error getting courses:', error);
     return errorResponse('Database error', 500);
