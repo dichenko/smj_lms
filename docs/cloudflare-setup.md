@@ -27,15 +27,12 @@ wrangler d1 create lms-database
 ```
 **Скопируйте database_id из вывода!**
 
-## Шаг 4: Настройте wrangler.toml
+## Шаг 4: Установите database_id
 
-Откройте файл `backend/wrangler.toml` и замените `"placeholder"` на ваш database_id:
-
-```toml
-[[d1_databases]]
-binding = "DB"
-database_name = "lms-database"
-database_id = "ваш_database_id_сюда"
+```bash
+cd backend
+wrangler secret put DATABASE_ID
+# Вставьте ваш database_id когда попросит
 ```
 
 ## Шаг 5: Создайте таблицы в базе
