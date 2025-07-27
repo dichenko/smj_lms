@@ -6,7 +6,7 @@ compatibility_date = "2024-01-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "lms-database"
-database_id = "YOUR_DATABASE_ID_HERE"
+database_id = "f4d33ecb-967a-4cca-ad44-e9b6144d4d49"
 
 # Переменные окружения - только несекретные значения
 [vars]
