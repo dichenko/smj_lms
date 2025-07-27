@@ -77,7 +77,7 @@ https://api.telegram.org/botYOUR_BOT_TOKEN/setWebhook?url=https://YOUR_WORKER_UR
 1. Зайдите в Cloudflare Pages
 2. Подключите ваш GitHub репозиторий
 3. Настройки сборки:
-   - Build command: `cd frontend && npm run build`
+   - Build command: `cd frontend && npm install && npm run build`
    - Build output directory: `frontend/dist`
 4. Деплой
 
