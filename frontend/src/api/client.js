@@ -1,6 +1,6 @@
 // API клиент для взаимодействия с Cloudflare Worker
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://lms-telegram-bot.workers.dev'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://lms-telegram-bot.3451881.workers.dev'
 
 class ApiClient {
   constructor() {
