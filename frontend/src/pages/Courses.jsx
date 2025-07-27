@@ -48,7 +48,7 @@ export default function Courses() {
         ...newLesson,
         links: newLesson.links ? JSON.parse(newLesson.links) : []
       };
-      await apiClient.addLessonToCourse(selectedCourse.id, lessonData);
+      await apiClient.addLesson(selectedCourse.id, lessonData);
       setNewLesson({ title: '', content: '', links: '' });
       setShowLessonForm(false);
       setSelectedCourse(null);

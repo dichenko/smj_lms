@@ -13,7 +13,7 @@ export default function Dashboard() {
   async function loadStats() {
     try {
       setLoading(true);
-      const data = await apiClient.getStats('dashboard');
+      const data = await apiClient.getDashboardStats();
       setStats(data);
     } catch (err) {
       setError('Ошибка загрузки статистики');

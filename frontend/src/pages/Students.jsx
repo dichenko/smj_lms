@@ -57,7 +57,7 @@ export default function Students() {
 
   async function handleAssignCourse(studentId, courseId) {
     try {
-      await apiClient.assignCourseToStudent(studentId, courseId);
+      await apiClient.assignCourse(studentId, courseId);
       loadData();
     } catch (err) {
       setError('Ошибка назначения курса');

@@ -19,12 +19,7 @@ export default function Reports() {
   async function loadReports() {
     try {
       setLoading(true);
-      const queryParams = new URLSearchParams();
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value) queryParams.append(key, value);
-      });
-      
-      const data = await apiClient.getReports(queryParams.toString());
+      const data = await apiClient.getReports(filters);
       setReports(data);
     } catch (err) {
       setError('Ошибка загрузки отчетов');
