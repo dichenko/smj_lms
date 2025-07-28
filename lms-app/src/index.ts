@@ -3,12 +3,15 @@ import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { DatabaseService } from './utils/database';
 import { D1Database, Fetcher } from '@cloudflare/workers-types';
+import { handleTelegramWebhook } from './telegram/webhook';
 
 // Типы для TypeScript
 interface Env {
   DB: D1Database;
   ASSETS: Fetcher;
   ENVIRONMENT: string;
+  TELEGRAM_BOT_TOKEN?: string;
+  TELEGRAM_ADMIN_CHAT_ID?: string;
 }
 
 interface Variables {
@@ -327,8 +330,20 @@ api.get('/logs', async (c) => {
 
 // Telegram webhook route
 api.post('/telegram/webhook', async (c) => {
-  // TODO: Обработка webhook от Telegram бота
-  return c.json({ message: 'Telegram webhook - TODO' });
+  try {
+    const db = c.get('db');
+    const botToken = c.env.TELEGRAM_BOT_TOKEN;
+    const adminChatId = c.env.TELEGRAM_ADMIN_CHAT_ID;
+    
+    if (!botToken || !adminChatId) {
+      return c.json({ error: 'Telegram bot not configured' }, 500);
+    }
+
+    const response = await handleTelegramWebhook(c.req.raw, db, botToken, adminChatId);
+    return response;
+  } catch (error: any) {
+    return c.json({ error: 'Telegram webhook error' }, 500);
+  }
 });
 
 // Mount API routes
