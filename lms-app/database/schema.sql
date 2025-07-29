@@ -75,9 +75,9 @@ CREATE TABLE IF NOT EXISTS error_logs (
 CREATE TABLE IF NOT EXISTS admin_sessions (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
     admin_id TEXT NOT NULL,
-    session_token TEXT UNIQUE NOT NULL,
-    expires_at DATETIME NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    expires_at DATETIME NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
     FOREIGN KEY (admin_id) REFERENCES admins(id) ON DELETE CASCADE
 );
 
@@ -91,15 +91,15 @@ CREATE INDEX IF NOT EXISTS idx_reports_lesson ON reports(lesson_id);
 CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status);
 CREATE INDEX IF NOT EXISTS idx_error_logs_source ON error_logs(source);
 CREATE INDEX IF NOT EXISTS idx_error_logs_created ON error_logs(created_at);
-CREATE INDEX IF NOT EXISTS idx_sessions_token ON admin_sessions(session_token);
+CREATE INDEX IF NOT EXISTS idx_sessions_id ON admin_sessions(id);
 CREATE INDEX IF NOT EXISTS idx_sessions_expires ON admin_sessions(expires_at);
+CREATE INDEX IF NOT EXISTS idx_sessions_active ON admin_sessions(is_active);
 
 -- Начальные данные для тестирования
 
 -- Создаем тестового админа (пароль: admin123)
--- Хеш получен через bcrypt: $2b$10$rO0DfG8ggRUHNBc6qS8aEuSKjNGCUqNcHa6n9Xkj7hYpZ5VoF2M7S
 INSERT OR IGNORE INTO admins (username, password_hash) 
-VALUES ('admin', '$2b$10$rO0DfG8ggRUHNBc6qS8aEuSKjNGCUqNcHa6n9Xkj7hYpZ5VoF2M7S');
+VALUES ('admin', 'admin123');
 
 -- Создаем тестовый курс
 INSERT OR IGNORE INTO courses (id, title, description) 

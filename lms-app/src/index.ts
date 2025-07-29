@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { DatabaseService } from './utils/database';
+import { AuthService } from './auth/session';
 import { D1Database, Fetcher } from '@cloudflare/workers-types';
 import { handleTelegramWebhook } from './telegram/webhook';
 
@@ -16,6 +17,7 @@ interface Env {
 
 interface Variables {
   db: DatabaseService;
+  auth: AuthService;
 }
 
 const app = new Hono<{ Bindings: Env; Variables: Variables }>();
@@ -28,10 +30,12 @@ app.use('/api/*', cors({
   allowHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// Middleware для создания database service
+// Middleware для создания database service и auth service
 app.use('/api/*', async (c, next) => {
   const db = new DatabaseService(c.env.DB);
+  const auth = new AuthService(db);
   c.set('db', db);
+  c.set('auth', auth);
   await next();
 });
 
@@ -49,14 +53,89 @@ api.get('/health', (c) => {
 
 // Auth routes (для админа)
 api.post('/auth/login', async (c) => {
-  // TODO: Реализовать аутентификацию админа
-  return c.json({ message: 'Login endpoint - TODO' });
+  try {
+    const auth = c.get('auth');
+    const body = await c.req.json();
+    
+    if (!body.username || !body.password) {
+      return c.json({ error: 'Username and password required' }, 400);
+    }
+
+    const result = await auth.authenticateAdmin({
+      username: body.username,
+      password: body.password
+    });
+
+    if (result.success && result.sessionId) {
+      // Устанавливаем cookie с session ID
+      c.header('Set-Cookie', `session=${result.sessionId}; HttpOnly; Path=/; Max-Age=86400; SameSite=Strict`);
+      return c.json({ success: true, message: 'Login successful' });
+    } else {
+      return c.json({ error: result.error || 'Authentication failed' }, 401);
+    }
+  } catch (error: any) {
+    return c.json({ error: 'Login error' }, 500);
+  }
 });
 
 api.post('/auth/logout', async (c) => {
-  // TODO: Реализовать выход админа
-  return c.json({ message: 'Logout endpoint - TODO' });
+  try {
+    const auth = c.get('auth');
+    const sessionId = c.req.header('Cookie')?.match(/session=([^;]+)/)?.[1];
+    
+    if (sessionId) {
+      await auth.logout(sessionId);
+    }
+    
+    // Удаляем cookie
+    c.header('Set-Cookie', 'session=; HttpOnly; Path=/; Max-Age=0; SameSite=Strict');
+    return c.json({ success: true, message: 'Logout successful' });
+  } catch (error: any) {
+    return c.json({ error: 'Logout error' }, 500);
+  }
 });
+
+// Проверка аутентификации
+api.get('/auth/check', async (c) => {
+  try {
+    const auth = c.get('auth');
+    const sessionId = c.req.header('Cookie')?.match(/session=([^;]+)/)?.[1];
+    
+    if (!sessionId) {
+      return c.json({ authenticated: false }, 401);
+    }
+
+    const validation = await auth.validateSession(sessionId);
+    
+    if (validation.valid) {
+      return c.json({ authenticated: true, adminId: validation.adminId });
+    } else {
+      return c.json({ authenticated: false, error: validation.error }, 401);
+    }
+  } catch (error: any) {
+    return c.json({ authenticated: false, error: 'Session check error' }, 500);
+  }
+});
+
+// Middleware для проверки аутентификации
+const requireAuth = async (c: any, next: any) => {
+  const sessionId = c.req.header('Cookie')?.match(/session=([^;]+)/)?.[1];
+  
+  if (!sessionId) {
+    return c.json({ error: 'Authentication required' }, 401);
+  }
+
+  const auth = c.get('auth');
+  const validation = await auth.validateSession(sessionId);
+  
+  if (!validation.valid) {
+    c.header('Set-Cookie', 'session=; HttpOnly; Path=/; Max-Age=0; SameSite=Strict');
+    return c.json({ error: validation.error || 'Invalid session' }, 401);
+  }
+
+  c.set('adminId', validation.adminId);
+  await next();
+};
 
 // Students routes
 api.get('/students', async (c) => {

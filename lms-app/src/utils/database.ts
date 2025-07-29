@@ -404,4 +404,38 @@ export class DatabaseService {
       'DELETE FROM admin_sessions WHERE expires_at <= ?'
     ).bind(this.now()).run();
   }
+
+  // Additional session methods for AuthService
+  async createAdminSession(data: { id: string; admin_id: string; expires_at: string }): Promise<AdminSession> {
+    const now = this.now();
+    
+    await this.db.prepare(
+      'INSERT INTO admin_sessions (id, admin_id, created_at, expires_at, is_active) VALUES (?, ?, ?, ?, ?)'
+    ).bind(data.id, data.admin_id, now, data.expires_at, true).run();
+
+    const session = await this.getAdminSessionById(data.id);
+    if (!session) throw new Error('Failed to create admin session');
+    return session;
+  }
+
+  async getAdminSessionById(id: string): Promise<AdminSession | null> {
+    const result = await this.db.prepare(
+      'SELECT * FROM admin_sessions WHERE id = ?'
+    ).bind(id).first<AdminSession>();
+    return result || null;
+  }
+
+  async deactivateAdminSession(sessionId: string): Promise<boolean> {
+    const result = await this.db.prepare(
+      'UPDATE admin_sessions SET is_active = ? WHERE id = ?'
+    ).bind(false, sessionId).run();
+    return result.changes > 0;
+  }
+
+  async cleanupExpiredSessions(): Promise<void> {
+    const now = this.now();
+    await this.db.prepare(
+      'DELETE FROM admin_sessions WHERE expires_at < ?'
+    ).bind(now).run();
+  }
 } 

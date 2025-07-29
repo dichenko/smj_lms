@@ -8,7 +8,8 @@
     "directory": "./public"
   },
   "vars": {
-    "ENVIRONMENT": "development"
+    "ENVIRONMENT": "development",
+    "ADMIN_PASSWORD": "admin123"
   },
   "d1_databases": [
     {
