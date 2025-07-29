@@ -104,7 +104,7 @@ export interface CreateReport {
 export interface ReviewReport {
   status: 'approved' | 'rejected';
   admin_comment?: string;
-  reviewed_by: string;
+  reviewed_by: string | null;
 }
 
 export interface CreateErrorLog {

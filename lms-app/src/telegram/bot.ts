@@ -509,7 +509,7 @@ export class TelegramBot {
       await this.db.reviewReport(reportId, {
         status: 'approved',
         admin_comment: undefined,
-        reviewed_by: 'admin'
+        reviewed_by: null
       });
 
       // Получаем данные для уведомления студента
@@ -588,7 +588,7 @@ export class TelegramBot {
       await this.db.reviewReport(reportId, {
         status: 'rejected',
         admin_comment: comment.trim() || 'Требуется доработка',
-        reviewed_by: 'admin'
+        reviewed_by: null
       });
 
       // Получаем данные для уведомления студента

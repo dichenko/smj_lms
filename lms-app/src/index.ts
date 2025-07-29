@@ -9,10 +9,17 @@ import { handleTelegramWebhook } from './telegram/webhook';
 // Типы для TypeScript
 interface Env {
   DB: D1Database;
+  BOT_STATE: KVNamespace;
   ASSETS: Fetcher;
   ENVIRONMENT: string;
   TELEGRAM_BOT_TOKEN?: string;
   TELEGRAM_ADMIN_CHAT_ID?: string;
+}
+
+interface KVNamespace {
+  get(key: string): Promise<string | null>;
+  put(key: string, value: string): Promise<void>;
+  delete(key: string): Promise<void>;
 }
 
 interface Variables {
@@ -430,7 +437,7 @@ api.put('/reports/:id/review', async (c) => {
     const report = await db.reviewReport(id, {
       status: body.status,
       admin_comment: body.admin_comment,
-      reviewed_by: 'admin' // TODO: получать из сессии
+              reviewed_by: null // TODO: получать из сессии
     });
     
     if (!report) {
