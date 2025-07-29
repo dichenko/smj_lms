@@ -1,4 +1,5 @@
 import { DatabaseService } from '../utils/database';
+import { StudentState, StudentStateData, StudentStateMachine } from './states';
 
 interface TelegramUpdate {
   update_id: number;
@@ -103,6 +104,309 @@ export class TelegramBot {
     await this.kv.delete(`admin_state_${chatId}`);
   }
 
+  // === МЕТОДЫ РАБОТЫ С СОСТОЯНИЯМИ СТУДЕНТОВ ===
+
+  /**
+   * Получить текущее состояние студента
+   */
+  private async getStudentState(studentId: string): Promise<StudentStateData | null> {
+    return await StudentStateMachine.getState(this.kv, studentId);
+  }
+
+  /**
+   * Обновить состояние студента
+   */
+  private async updateStudentState(studentId: string, stateData: StudentStateData): Promise<void> {
+    await StudentStateMachine.setState(this.kv, studentId, stateData);
+  }
+
+  /**
+   * Инициализировать состояние для нового студента
+   */
+  private async initializeStudentState(studentId: string, courseId?: string): Promise<StudentStateData> {
+    const initialState = StudentStateMachine.createInitialState(courseId);
+    await this.updateStudentState(studentId, initialState);
+    return initialState;
+  }
+
+  /**
+   * Выполнить переход состояния
+   */
+  private async transitionStudentState(
+    studentId: string, 
+    action: string, 
+    newData?: Partial<StudentStateData>
+  ): Promise<StudentStateData | null> {
+    const currentState = await this.getStudentState(studentId);
+    if (!currentState) return null;
+
+    const nextState = StudentStateMachine.getNextState(currentState.state, action);
+    
+    if (StudentStateMachine.isValidTransition(currentState.state, nextState)) {
+      const updatedState: StudentStateData = {
+        ...currentState,
+        ...newData,
+        state: nextState,
+        context: {
+          ...currentState.context,
+          ...newData?.context,
+          previousState: currentState.state
+        }
+      };
+      
+      await this.updateStudentState(studentId, updatedState);
+      return updatedState;
+    }
+
+    return currentState;
+  }
+
+  /**
+   * Центральный обработчик ответов на основе состояния студента
+   */
+  private async handleStudentStateBasedResponse(
+    chatId: number, 
+    studentId: string, 
+    studentState: StudentStateData
+  ): Promise<void> {
+    switch (studentState.state) {
+      case StudentState.WELCOME:
+        await this.showWelcomeScreen(chatId, studentId);
+        break;
+        
+      case StudentState.DASHBOARD:
+        await this.showStatefulDashboard(chatId, studentId);
+        break;
+        
+      case StudentState.COURSE_VIEW:
+        if (studentState.courseId) {
+          await this.showStatefulCourseView(chatId, studentId, studentState.courseId);
+        } else {
+          // Fallback to dashboard if no course selected
+          await this.transitionStudentState(studentId, 'back_to_dashboard');
+          await this.showStatefulDashboard(chatId, studentId);
+        }
+        break;
+        
+      case StudentState.AWAITING_SUBMISSION:
+        await this.showSubmissionPrompt(chatId, studentId, studentState);
+        break;
+        
+      case StudentState.REPORT_PENDING:
+        await this.showReportPendingStatus(chatId, studentId, studentState);
+        break;
+        
+      case StudentState.REPORT_REJECTED:
+        await this.showReportRejectedStatus(chatId, studentId, studentState);
+        break;
+        
+      case StudentState.LESSON_COMPLETED:
+        await this.showLessonCompletedStatus(chatId, studentId, studentState);
+        break;
+        
+      case StudentState.COURSE_COMPLETED:
+        await this.showCourseCompletedStatus(chatId, studentId);
+        break;
+        
+      default:
+        // Fallback to dashboard for unknown states
+        await this.transitionStudentState(studentId, 'activate');
+        await this.showStatefulDashboard(chatId, studentId);
+        break;
+    }
+  }
+
+  // === МЕТОДЫ ОТОБРАЖЕНИЯ ДЛЯ КАЖДОГО СОСТОЯНИЯ ===
+
+  /**
+   * Показать экран приветствия
+   */
+  private async showWelcomeScreen(chatId: number, studentId: string): Promise<void> {
+    const student = await this.db.getStudentById(studentId);
+    if (!student) return;
+
+    const message = `👋 **Добро пожаловать, ${student.name}!**\n\n` +
+                   `🎓 Добро пожаловать в SMJ LMS!\n` +
+                   `📚 Готовы начать обучение?`;
+
+    const keyboard: InlineKeyboard = {
+      inline_keyboard: [[
+        { text: '📚 Перейти к курсам', callback_data: 'welcome_to_dashboard' }
+      ]]
+    };
+
+    await this.sendMessageWithKeyboard(chatId, message, keyboard);
+  }
+
+  /**
+   * Показать дашборд с состояниями
+   */
+  private async showStatefulDashboard(chatId: number, studentId: string): Promise<void> {
+    // Пока используем существующий метод, но с обновлением состояния
+    await this.transitionStudentState(studentId, 'refresh');
+    await this.showStudentDashboard(chatId, studentId);
+  }
+
+  /**
+   * Показать курс с состояниями
+   */
+  private async showStatefulCourseView(chatId: number, studentId: string, courseId: string): Promise<void> {
+    // Обновляем состояние с текущим курсом
+    await this.transitionStudentState(studentId, 'select_course', { courseId });
+    await this.showCurrentLesson(chatId, studentId, courseId);
+  }
+
+  /**
+   * Показать промпт для отправки отчета
+   */
+  private async showSubmissionPrompt(chatId: number, studentId: string, state: StudentStateData): Promise<void> {
+    await this.sendMessage(chatId,
+      '📝 **Отправка отчета**\n\n' +
+      'Отправьте файл (документ, изображение) с вашим отчетом.\n\n' +
+      'Поддерживаемые форматы:\n' +
+      '• Документы (PDF, DOC, DOCX)\n• Изображения (JPG, PNG)\n\n' +
+      '❗ После отправки файл автоматически будет передан на проверку'
+    );
+  }
+
+  /**
+   * Показать статус ожидания проверки
+   */
+  private async showReportPendingStatus(chatId: number, studentId: string, state: StudentStateData): Promise<void> {
+    const message = '⏳ **Отчет на проверке**\n\n' +
+                   'Ваш отчет передан администратору на проверку.\n' +
+                   'Вы получите уведомление о результате.';
+
+    const keyboard: InlineKeyboard = {
+      inline_keyboard: [[
+        { text: '🔙 К курсам', callback_data: 'to_dashboard' }
+      ]]
+    };
+
+    await this.sendMessageWithKeyboard(chatId, message, keyboard);
+  }
+
+  /**
+   * Показать статус отклоненного отчета
+   */
+  private async showReportRejectedStatus(chatId: number, studentId: string, state: StudentStateData): Promise<void> {
+    let message = '❌ **Отчет отклонен**\n\n';
+    
+    if (state.reportId) {
+      const report = await this.db.getReportById(state.reportId);
+      if (report?.admin_comment) {
+        message += `💬 **Комментарий:** ${report.admin_comment}\n\n`;
+      }
+    }
+    
+    message += 'Пожалуйста, доработайте отчет и отправьте заново.';
+
+    const keyboard: InlineKeyboard = {
+      inline_keyboard: [[
+        { text: '🔄 Переделать', callback_data: 'resubmit_report' },
+        { text: '🔙 К уроку', callback_data: `course_${state.courseId}` }
+      ]]
+    };
+
+    await this.sendMessageWithKeyboard(chatId, message, keyboard);
+  }
+
+  /**
+   * Показать статус завершенного урока
+   */
+  private async showLessonCompletedStatus(chatId: number, studentId: string, state: StudentStateData): Promise<void> {
+    const message = '🎉 **Урок завершен!**\n\n' +
+                   'Поздравляем! Ваш отчет принят.\n' +
+                   'Вы можете перейти к следующему уроку.';
+
+    const keyboard: InlineKeyboard = {
+      inline_keyboard: [[
+        { text: '➡️ Следующий урок', callback_data: `course_${state.courseId}` },
+        { text: '🔙 К курсам', callback_data: 'to_dashboard' }
+      ]]
+    };
+
+    await this.sendMessageWithKeyboard(chatId, message, keyboard);
+  }
+
+  /**
+   * Показать статус завершенного курса
+   */
+  private async showCourseCompletedStatus(chatId: number, studentId: string): Promise<void> {
+    const message = '🏆 **Курс завершен!**\n\n' +
+                   'Поздравляем! Вы успешно прошли весь курс.\n' +
+                   'Можете приступать к изучению других курсов.';
+
+    const keyboard: InlineKeyboard = {
+      inline_keyboard: [[
+        { text: '📚 Все курсы', callback_data: 'to_dashboard' },
+        { text: '🎯 Мой прогресс', callback_data: 'show_progress' }
+      ]]
+    };
+
+    await this.sendMessageWithKeyboard(chatId, message, keyboard);
+  }
+
+  /**
+   * Обработчик callback'ов студентов с учетом состояний
+   */
+  private async handleStudentCallback(
+    callbackQuery: TelegramCallbackQuery, 
+    studentId: string, 
+    data: string
+  ): Promise<void> {
+    const chatId = callbackQuery.message.chat.id;
+    let studentState = await this.getStudentState(studentId);
+
+    // Если состояние не найдено, инициализируем
+    if (!studentState) {
+      studentState = await this.initializeStudentState(studentId);
+    }
+
+    // Обрабатываем различные callback'и
+    if (data === 'welcome_to_dashboard') {
+      await this.transitionStudentState(studentId, 'view_courses');
+      await this.showStatefulDashboard(chatId, studentId);
+      
+    } else if (data === 'to_dashboard' || data === 'back_to_courses') {
+      await this.transitionStudentState(studentId, 'back_to_dashboard');
+      await this.showStatefulDashboard(chatId, studentId);
+      
+    } else if (data.startsWith('course_')) {
+      const courseId = data.replace('course_', '');
+      await this.transitionStudentState(studentId, 'select_course', { courseId });
+      await this.showStatefulCourseView(chatId, studentId, courseId);
+      
+    } else if (data.startsWith('submit_')) {
+      const lessonId = data.replace('submit_', '');
+      await this.transitionStudentState(studentId, 'submit_report', { lessonId });
+      const newState = await this.getStudentState(studentId);
+      if (newState) {
+        await this.showSubmissionPrompt(chatId, studentId, newState);
+      }
+      
+    } else if (data === 'resubmit_report') {
+      await this.transitionStudentState(studentId, 'resubmit');
+      const newState = await this.getStudentState(studentId);
+      if (newState) {
+        await this.showSubmissionPrompt(chatId, studentId, newState);
+      }
+      
+    } else if (data === 'cancel_submission') {
+      await this.transitionStudentState(studentId, 'cancel');
+      const newState = await this.getStudentState(studentId);
+      if (newState && newState.courseId) {
+        await this.showStatefulCourseView(chatId, studentId, newState.courseId);
+      } else {
+        await this.showStatefulDashboard(chatId, studentId);
+      }
+      
+    } else {
+      // Fallback: если callback не распознан, показываем текущее состояние
+      await this.handleStudentStateBasedResponse(chatId, studentId, studentState);
+    }
+  }
+
   // Обработка webhook обновлений
   async handleUpdate(update: TelegramUpdate): Promise<void> {
     try {
@@ -148,7 +452,18 @@ export class TelegramBot {
       return;
     }
 
-    // Обычные сообщения
+    // Обычные текстовые сообщения - проверяем состояние студента
+    const student = await this.db.getStudentByTgid(tgid);
+    if (student) {
+      const studentState = await this.getStudentState(student.id);
+      if (studentState) {
+        // Показываем текущее состояние вместо стандартного сообщения
+        await this.handleStudentStateBasedResponse(chatId, student.id, studentState);
+        return;
+      }
+    }
+
+    // Fallback для незарегистрированных пользователей
     await this.sendMessage(chatId, 
       '💡 Используйте команду /start для начала работы с ботом'
     );
@@ -167,7 +482,7 @@ export class TelegramBot {
     }
   }
 
-  // Команда /start - главная логика
+  // Команда /start - главная логика с поддержкой состояний
   private async handleStartCommand(message: TelegramMessage): Promise<void> {
     const chatId = message.chat.id;
     const tgid = message.from.id.toString();
@@ -186,7 +501,16 @@ export class TelegramBot {
         return;
       }
 
-      await this.showStudentDashboard(chatId, student.id);
+      // Получаем или инициализируем состояние студента
+      let studentState = await this.getStudentState(student.id);
+      
+      if (!studentState) {
+        // Инициализируем состояние для нового студента
+        studentState = await this.initializeStudentState(student.id);
+      }
+
+      // Обрабатываем в зависимости от текущего состояния
+      await this.handleStudentStateBasedResponse(chatId, student.id, studentState);
 
     } catch (error: any) {
       console.error('Error in /start command:', error);
@@ -350,15 +674,8 @@ export class TelegramBot {
         return;
       }
 
-      if (data.startsWith('course_')) {
-        const courseId = data.replace('course_', '');
-        await this.showCurrentLesson(chatId, student.id, courseId);
-      } else if (data === 'back_to_courses') {
-        await this.showStudentDashboard(chatId, student.id);
-      } else if (data.startsWith('submit_')) {
-        const lessonId = data.replace('submit_', '');
-        await this.handleSubmitRequest(chatId, student.id, lessonId);
-      }
+      // Обрабатываем callback'и с учетом состояний
+      await this.handleStudentCallback(callbackQuery, student.id, data);
 
       await this.answerCallbackQuery(callbackQuery.id);
 
@@ -383,7 +700,7 @@ export class TelegramBot {
     // Пока используем простой подход - следующий файл от этого пользователя будет отчетом
   }
 
-  // Обработка загруженных файлов
+  // Обработка загруженных файлов с поддержкой состояний
   private async handleFileUpload(message: TelegramMessage): Promise<void> {
     const chatId = message.chat.id;
     const tgid = message.from.id.toString();
@@ -392,6 +709,17 @@ export class TelegramBot {
       const student = await this.db.getStudentByTgid(tgid);
       if (!student) {
         await this.sendMessage(chatId, '❌ Вы не зарегистрированы в системе');
+        return;
+      }
+
+      // Проверяем состояние студента
+      const studentState = await this.getStudentState(student.id);
+      
+      // Принимаем файлы только в состоянии ожидания отправки
+      if (!studentState || studentState.state !== StudentState.AWAITING_SUBMISSION) {
+        await this.sendMessage(chatId, 
+          '❌ Сначала выберите урок и нажмите "📝 Сдать отчет"'
+        );
         return;
       }
 
@@ -480,13 +808,26 @@ export class TelegramBot {
       // Пересылаем файл администратору
       await this.forwardMessage(this.adminChatId, chatId, message.message_id);
 
-      // Уведомляем студента
+      // Обновляем состояние студента - переходим к ожиданию проверки
+      await this.transitionStudentState(student.id, 'file_uploaded', {
+        reportId: report.id,
+        lessonId: currentLesson.id,
+        courseId: currentCourse.id
+      });
+
+      // Уведомляем студента и показываем новое состояние
       await this.sendMessage(chatId,
         `✅ **Отчет принят на проверку!**\n\n` +
         `**Урок:** ${currentLesson.title}\n` +
         `**Статус:** На проверке ⏳\n\n` +
         `Вы получите уведомление, когда отчет будет проверен.`
       );
+
+      // Показываем состояние ожидания проверки
+      const newState = await this.getStudentState(student.id);
+      if (newState) {
+        await this.showReportPendingStatus(chatId, student.id, newState);
+      }
 
     } catch (error: any) {
       console.error('Error handling file upload:', error);
@@ -517,14 +858,24 @@ export class TelegramBot {
       const lesson = await this.db.getLessonById(report.lesson_id);
       
       if (student && lesson) {
+        // Обновляем состояние студента - урок завершен
+        await this.transitionStudentState(student.id, 'report_approved', {
+          lessonId: lesson.id
+        });
+
         // Уведомляем студента
         await this.sendMessage(student.tgid,
           `🎉 **Отчет одобрен!**\n\n` +
           `**Урок:** ${lesson.title}\n` +
           `**Статус:** Принят ✅\n\n` +
-          `Поздравляем! Вы можете перейти к следующему уроку.\n\n` +
-          `Используйте /start для продолжения обучения.`
+          `Поздравляем! Вы можете перейти к следующему уроку.`
         );
+
+        // Показываем состояние завершенного урока
+        const studentState = await this.getStudentState(student.id);
+        if (studentState) {
+          await this.showLessonCompletedStatus(parseInt(student.tgid), student.id, studentState);
+        }
       }
 
       // Обновляем сообщение админа
@@ -596,14 +947,25 @@ export class TelegramBot {
       const lesson = await this.db.getLessonById(report.lesson_id);
       
       if (student && lesson) {
+        // Обновляем состояние студента - отчет отклонен
+        await this.transitionStudentState(student.id, 'report_rejected', {
+          reportId: reportId,
+          lessonId: lesson.id
+        });
+
         // Уведомляем студента
         await this.sendMessage(student.tgid,
           `❌ **Отчет отклонен**\n\n` +
           `**Урок:** ${lesson.title}\n` +
           `**Комментарий:** ${comment.trim() || 'Требуется доработка'}\n\n` +
-          `Пожалуйста, доработайте отчет и отправьте заново.\n\n` +
-          `Используйте /start для продолжения.`
+          `Пожалуйста, доработайте отчет и отправьте заново.`
         );
+
+        // Показываем состояние отклоненного отчета
+        const studentState = await this.getStudentState(student.id);
+        if (studentState) {
+          await this.showReportRejectedStatus(parseInt(student.tgid), student.id, studentState);
+        }
       }
 
       // Уведомляем админа об успешном отклонении
