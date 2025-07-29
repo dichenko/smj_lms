@@ -1140,6 +1140,53 @@
             opacity: 0.7;
         }
 
+        /* Минималистичные кнопки курсов в модальном окне редактирования */
+        #editCourseCheckboxes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .course-toggle-btn {
+            padding: 8px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 20px;
+            background: white;
+            color: #6c757d;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+
+        .course-toggle-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .course-toggle-btn.enrolled {
+            border-color: #28a745;
+            background: #28a745;
+            color: white;
+        }
+
+        .course-toggle-btn.enrolled:hover {
+            background: #218838;
+            border-color: #218838;
+        }
+
+        .course-toggle-btn.not-enrolled {
+            border-color: #dc3545;
+            color: #dc3545;
+        }
+
+        .course-toggle-btn.not-enrolled:hover {
+            background: #dc3545;
+            color: white;
+        }
+
         .progress-table .student-col {
             width: 250px;
             min-width: 250px;
@@ -2416,21 +2463,36 @@
             document.getElementById('editStudentName').value = student.name;
             document.getElementById('editStudentCity').value = student.city;
             
-            // Загружаем курсы и отмечаем текущие
-            const checkboxesContainer = document.getElementById('editCourseCheckboxes');
-            checkboxesContainer.innerHTML = courses.map(course => {
-                const isChecked = (student.courses || []).some(sc => sc.id === course.id);
+            // Загружаем курсы как минималистичные кнопки
+            const coursesContainer = document.getElementById('editCourseCheckboxes');
+            coursesContainer.innerHTML = courses.map(course => {
+                const isEnrolled = (student.courses || []).some(sc => sc.id === course.id);
                 return `
-                    <div class="course-checkbox-item">
-                        <label class="course-checkbox-label">
-                            <input type="checkbox" value="${course.id}" class="course-checkbox" ${isChecked ? 'checked' : ''}>
-                            <span class="course-checkbox-text">${course.title}</span>
-                        </label>
-                    </div>
+                    <button type="button" 
+                            class="course-toggle-btn ${isEnrolled ? 'enrolled' : 'not-enrolled'}" 
+                            data-course-id="${course.id}"
+                            onclick="toggleStudentCourse(this, '${course.id}')">
+                        ${course.title}
+                    </button>
                 `;
             }).join('');
             
             document.getElementById('editStudentModal').style.display = 'block';
+        }
+
+        // Переключение курса студента
+        function toggleStudentCourse(button, courseId) {
+            const isEnrolled = button.classList.contains('enrolled');
+            
+            if (isEnrolled) {
+                // Отчисляем из курса
+                button.classList.remove('enrolled');
+                button.classList.add('not-enrolled');
+            } else {
+                // Зачисляем в курс
+                button.classList.remove('not-enrolled');
+                button.classList.add('enrolled');
+            }
         }
 
         // Сохранение изменений студента
@@ -2442,9 +2504,9 @@
             const name = document.getElementById('editStudentName').value;
             const city = document.getElementById('editStudentCity').value;
             
-            // Получаем выбранные курсы
-            const selectedCourses = Array.from(document.querySelectorAll('#editCourseCheckboxes input:checked'))
-                .map(cb => cb.value);
+            // Получаем выбранные курсы из кнопок
+            const selectedCourses = Array.from(document.querySelectorAll('#editCourseCheckboxes .course-toggle-btn.enrolled'))
+                .map(btn => btn.dataset.courseId);
             
             try {
                 const response = await fetch(`/api/students/${studentId}`, {
