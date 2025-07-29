@@ -181,6 +181,10 @@ export class DatabaseService {
     const updates: string[] = [];
     const values: any[] = [];
 
+    if (data.tgid !== undefined) {
+      updates.push('tgid = ?');
+      values.push(data.tgid);
+    }
     if (data.name !== undefined) {
       updates.push('name = ?');
       values.push(data.name);
@@ -190,16 +194,34 @@ export class DatabaseService {
       values.push(data.city);
     }
 
-    if (updates.length === 0) {
-      return this.getStudentById(id);
+    // Обновляем основные данные студента если есть изменения
+    if (updates.length > 0) {
+      updates.push('updated_at = ?');
+      values.push(now, id);
+
+      await this.db.prepare(
+        `UPDATE students SET ${updates.join(', ')} WHERE id = ?`
+      ).bind(...values).run();
     }
 
-    updates.push('updated_at = ?');
-    values.push(now, id);
+    // Обновляем курсы студента если переданы course_ids
+    if (data.course_ids !== undefined) {
+      // Сначала удаляем все текущие связи студента с курсами
+      await this.db.prepare(
+        'DELETE FROM student_courses WHERE student_id = ?'
+      ).bind(id).run();
 
-    await this.db.prepare(
-      `UPDATE students SET ${updates.join(', ')} WHERE id = ?`
-    ).bind(...values).run();
+      // Затем добавляем новые связи
+      if (data.course_ids.length > 0) {
+        const insertPromises = data.course_ids.map(courseId =>
+          this.db.prepare(
+            'INSERT INTO student_courses (id, student_id, course_id, enrolled_at, is_active) VALUES (?, ?, ?, ?, ?)'
+          ).bind(this.generateId(), id, courseId, now, true).run()
+        );
+        
+        await Promise.all(insertPromises);
+      }
+    }
 
     return this.getStudentById(id);
   }

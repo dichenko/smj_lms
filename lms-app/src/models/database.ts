@@ -120,8 +120,10 @@ export interface UpdateCourse {
 }
 
 export interface UpdateStudent {
+  tgid?: string;
   name?: string;
   city?: string;
+  course_ids?: string[];
 }
 
 export interface UpdateStudentCourse {
