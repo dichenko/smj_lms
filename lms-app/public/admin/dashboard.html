@@ -517,7 +517,7 @@
 
         /* Стили для процентов прогресса */
         .overall-progress {
-            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            background: #6c757d;
             color: white;
             padding: 0.25rem 0.5rem;
             border-radius: 12px;
@@ -529,8 +529,12 @@
             text-align: center;
         }
 
-        .course-progress {
+        .overall-progress.zero {
             background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+
+        .course-progress {
+            background: #6c757d;
             color: white;
             padding: 0.2rem 0.4rem;
             border-radius: 8px;
@@ -540,6 +544,10 @@
             display: inline-block;
             min-width: 35px;
             text-align: center;
+        }
+
+        .course-progress.zero {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
         }
 
         .student-name {
@@ -1328,13 +1336,14 @@
             
             tbody.innerHTML = filteredData.map(student => {
                 const overallProgress = calculateOverallProgress(student);
+                const overallProgressClass = overallProgress === 0 ? 'zero' : '';
                 return `
                 <tr>
                     <td class="student-column">
                         <div class="student-info">
                             <div class="student-name">
                                 ${student.name}
-                                <span class="overall-progress">${overallProgress}%</span>
+                                <span class="overall-progress ${overallProgressClass}">${overallProgress}%</span>
                             </div>
                             <div class="student-city">${student.city}</div>
                         </div>
@@ -1343,12 +1352,13 @@
                         <div class="courses-progress">
                             ${student.courses.map(course => {
                                 const courseProgress = calculateCourseProgress(course);
+                                const courseProgressClass = courseProgress === 0 ? 'zero' : '';
                                 return `
                                 <div class="course-block">
                                     <div class="course-row">
                                         <div class="course-title">
                                             ${course.title}
-                                            <span class="course-progress">${courseProgress}%</span>
+                                            <span class="course-progress ${courseProgressClass}">${courseProgress}%</span>
                                         </div>
                                         <div class="lessons-row">
                                             ${course.lessons.map(lesson => `
