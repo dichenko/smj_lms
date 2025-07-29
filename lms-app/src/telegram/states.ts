@@ -29,6 +29,7 @@ export interface StudentStateData {
   context?: {                 // Дополнительный контекст
     previousState?: StudentState;
     messageId?: number;       // ID сообщения для редактирования
+    messageIds?: number[];    // ID сообщений для удаления
     submissionAttempts?: number; // Количество попыток сдачи
     hasSeenWelcome?: boolean; // Показывалось ли приветствие
     telegramName?: string;    // Имя пользователя из Telegram

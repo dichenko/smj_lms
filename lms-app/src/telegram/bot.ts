@@ -256,7 +256,7 @@ export class TelegramBot {
       ]]
     };
 
-    await this.sendMessageWithKeyboard(chatId, message, keyboard);
+    await this.sendMessageWithKeyboard(chatId, message, keyboard, studentId);
   }
 
   /**
@@ -599,7 +599,7 @@ export class TelegramBot {
         inline_keyboard: buttons
       };
 
-      await this.sendMessageWithKeyboard(chatId, message, keyboard);
+      await this.sendMessageWithKeyboard(chatId, message, keyboard, studentId);
 
     } catch (error: any) {
       console.error('Error showing dashboard:', error);
@@ -894,15 +894,7 @@ export class TelegramBot {
           lessonId: lesson.id
         });
 
-        // Уведомляем студента
-        await this.sendMessage(student.tgid,
-          `🎉 **Отчет одобрен!**\n\n` +
-          `**Урок:** ${lesson.title}\n` +
-          `**Статус:** Принят ✅\n\n` +
-          `Поздравляем! Вы можете перейти к следующему уроку.`
-        );
-
-        // Показываем состояние завершенного урока
+        // Показываем только состояние завершенного урока (без дублирования)
         const studentState = await this.getStudentState(student.id);
         if (studentState) {
           await this.showLessonCompletedStatus(parseInt(student.tgid), student.id, studentState);
@@ -984,15 +976,7 @@ export class TelegramBot {
           lessonId: lesson.id
         });
 
-        // Уведомляем студента
-        await this.sendMessage(student.tgid,
-          `❌ **Отчет отклонен**\n\n` +
-          `**Урок:** ${lesson.title}\n` +
-          `**Комментарий:** ${comment.trim() || 'Требуется доработка'}\n\n` +
-          `Пожалуйста, доработайте отчет и отправьте заново.`
-        );
-
-        // Показываем состояние отклоненного отчета
+        // Показываем только состояние отклоненного отчета (без дублирования)
         const studentState = await this.getStudentState(student.id);
         if (studentState) {
           await this.showReportRejectedStatus(parseInt(student.tgid), student.id, studentState);
@@ -1036,7 +1020,39 @@ export class TelegramBot {
     }
   }
 
-  async sendMessageWithKeyboard(chatId: number | string, text: string, keyboard: InlineKeyboard): Promise<boolean> {
+  /**
+   * Отправить сообщение и сохранить ID для последующего удаления
+   */
+  async sendMessageWithTracking(chatId: number | string, text: string, studentId?: string): Promise<boolean> {
+    try {
+      const response = await fetch(`${this.apiBase}${this.botToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: text,
+          parse_mode: 'Markdown'
+        })
+      });
+
+      if (response.ok && studentId) {
+        const result = await response.json();
+        if (result.result?.message_id) {
+          // Сохраняем ID сообщения в состоянии студента
+          await this.transitionStudentState(studentId, 'track_message', {
+            context: { messageId: result.result.message_id }
+          });
+        }
+      }
+
+      return response.ok;
+    } catch (error) {
+      console.error('Error sending tracked message:', error);
+      return false;
+    }
+  }
+
+  async sendMessageWithKeyboard(chatId: number | string, text: string, keyboard: InlineKeyboard, studentId?: string): Promise<boolean> {
     try {
       const response = await fetch(`${this.apiBase}${this.botToken}/sendMessage`, {
         method: 'POST',
@@ -1048,6 +1064,20 @@ export class TelegramBot {
           reply_markup: keyboard
         })
       });
+
+      if (response.ok && studentId) {
+        const result = await response.json();
+        if (result.result?.message_id) {
+          // Добавляем ID сообщения к списку для удаления
+          const currentState = await this.getStudentState(studentId);
+          const currentMessageIds = currentState?.context?.messageIds || [];
+          const newMessageIds = [...currentMessageIds, result.result.message_id];
+          
+          await this.transitionStudentState(studentId, 'track_message', {
+            context: { messageIds: newMessageIds }
+          });
+        }
+      }
 
       return response.ok;
     } catch (error) {
@@ -1124,16 +1154,57 @@ export class TelegramBot {
   }
 
   /**
-   * Очистить историю чата (удалить предыдущие сообщения)
+   * Очистить историю чата (удалить предыдущие сообщения бота)
    */
-  private async clearChatHistory(chatId: number, keepLastN: number = 1): Promise<void> {
+  private async clearChatHistory(chatId: number): Promise<void> {
     try {
-      // В Telegram нельзя массово удалять сообщения в личных чатах
-      // Но можно отправить "разделитель" для визуальной очистки
-      await this.sendMessage(chatId, '🏠 ═══════════════════════');
+      // Получаем студента по chatId (нужно найти по tgid)
+      const student = await this.db.getStudentByTgid(chatId.toString());
+      if (!student) return;
+
+      const studentState = await this.getStudentState(student.id);
+      const messageIds = studentState?.context?.messageIds || [];
+      
+      // Пытаемся удалить сохраненные сообщения бота
+      for (const messageId of messageIds) {
+        try {
+          await this.deleteMessage(chatId, messageId);
+          // Небольшая задержка между удалениями
+          await new Promise(resolve => setTimeout(resolve, 100));
+        } catch {
+          // Игнорируем ошибки удаления отдельных сообщений
+        }
+      }
+      
+      // Очищаем список сохраненных сообщений
+      if (messageIds.length > 0) {
+        await this.transitionStudentState(student.id, 'clear_messages', {
+          context: { messageIds: [] }
+        });
+      }
+      
     } catch (error) {
       // Игнорируем ошибки очистки - не критично
       console.log('Chat clear failed (non-critical):', error);
+    }
+  }
+
+  /**
+   * Удалить сообщение
+   */
+  private async deleteMessage(chatId: number, messageId: number): Promise<boolean> {
+    try {
+      const response = await fetch(`${this.apiBase}${this.botToken}/deleteMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          message_id: messageId
+        })
+      });
+      return response.ok;
+    } catch {
+      return false;
     }
   }
 
