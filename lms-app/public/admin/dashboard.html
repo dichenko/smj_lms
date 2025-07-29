@@ -1070,6 +1070,26 @@
             background: #e9ecef;
             color: #6c757d;
         }
+
+        /* Стили для сообщений об ошибках и пустых состояний */
+        .error {
+            text-align: center;
+            color: #dc3545;
+            background: #f8d7da;
+            padding: 2rem;
+            border-radius: 8px;
+            border: 1px solid #f5c6cb;
+            margin: 1rem 0;
+        }
+
+        .no-courses, .no-lessons {
+            text-align: center;
+            color: #6c757d;
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 6px;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
@@ -1429,73 +1449,141 @@
                 updateProgressCityFilter();
             } catch (error) {
                 console.error('Error loading progress:', error);
-                document.getElementById('progressTableBody').innerHTML = 
-                    '<tr><td colspan="2" class="error">Ошибка загрузки данных</td></tr>';
+                const container = document.getElementById('progressTableBody');
+                if (container) {
+                    container.innerHTML = '<div class="error">Ошибка загрузки данных</div>';
+                }
             }
         }
 
-        // Отображение таблицы прогресса
+        // Отображение прогресса студентов
         function renderProgressTable() {
-            const tbody = document.getElementById('progressTableBody');
-            const cityFilter = document.getElementById('progressCityFilter').value;
-            const searchFilter = document.getElementById('progressSearchFilter').value.toLowerCase();
+            const container = document.getElementById('progressTableBody');
             
+            // Безопасная проверка элементов
+            if (!container) {
+                console.error('Progress table container not found');
+                return;
+            }
+
+            // Безопасная проверка данных
+            if (!Array.isArray(progressData)) {
+                console.error('Progress data is not an array');
+                container.innerHTML = '<div class="error">Ошибка загрузки данных</div>';
+                return;
+            }
+            
+            // Получение фильтров с проверкой существования элементов
+            const cityFilterEl = document.getElementById('progressCityFilter');
+            const searchFilterEl = document.getElementById('progressSearchFilter');
+            
+            const cityFilter = cityFilterEl ? cityFilterEl.value : '';
+            const searchFilter = searchFilterEl ? searchFilterEl.value.toLowerCase() : '';
+            
+            // Фильтрация данных
             let filteredData = progressData;
             
             if (cityFilter) {
-                filteredData = filteredData.filter(student => student.city === cityFilter);
+                filteredData = filteredData.filter(student => 
+                    student && student.city === cityFilter
+                );
             }
             
             if (searchFilter) {
                 filteredData = filteredData.filter(student => 
+                    student && student.name && 
                     student.name.toLowerCase().includes(searchFilter)
                 );
             }
             
+            // Проверка результатов фильтрации
             if (filteredData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="2" class="loading">Студенты не найдены</td></tr>';
+                container.innerHTML = '<div class="loading">Студенты не найдены</div>';
                 return;
             }
             
-            const container = document.getElementById('progressTableBody');
-            container.innerHTML = filteredData.map(student => {
-                const overallProgress = calculateOverallProgress(student);
-                const overallProgressClass = overallProgress === 0 ? 'zero' : '';
-                return `
-                <div class="student-card">
-                    <div class="student-header">
-                        <div class="student-info">
-                            <div class="student-name">${student.name}</div>
-                            <div class="student-city">${student.city}</div>
-                        </div>
-                        <div class="overall-progress ${overallProgressClass}">${overallProgress}%</div>
-                    </div>
-                    <div class="courses-section">
-                        <div class="courses-grid">
-                            ${student.courses.map(course => {
-                                const courseProgress = calculateCourseProgress(course);
-                                const courseProgressClass = courseProgress === 0 ? 'zero' : '';
-                                return `
+            // Генерация HTML с обработкой ошибок
+            try {
+                const html = filteredData.map(student => {
+                    // Безопасная проверка данных студента
+                    if (!student || !student.name) {
+                        return '';
+                    }
+
+                    const overallProgress = calculateOverallProgress(student);
+                    const overallProgressClass = overallProgress === 0 ? 'zero' : '';
+                    
+                    // Безопасная обработка курсов
+                    const coursesHtml = (student.courses && Array.isArray(student.courses)) 
+                        ? student.courses.map(course => {
+                            if (!course || !course.title) {
+                                return '';
+                            }
+
+                            const courseProgress = calculateCourseProgress(course);
+                            const courseProgressClass = courseProgress === 0 ? 'zero' : '';
+                            
+                            // Безопасная обработка уроков
+                            const lessonsHtml = (course.lessons && Array.isArray(course.lessons))
+                                ? course.lessons.map(lesson => {
+                                    if (!lesson) {
+                                        return '';
+                                    }
+                                    
+                                    const lessonTitle = lesson.title || 'Урок';
+                                    const lessonStatus = lesson.status || 'not_started';
+                                    const lessonOrder = lesson.order || '?';
+                                    const lessonId = lesson.id || '';
+                                    const courseTitle = course.title || '';
+                                    
+                                    return `
+                                        <div class="lesson-number ${lessonStatus}" 
+                                             title="${lessonTitle} - ${getLessonStatusText(lessonStatus)}"
+                                             onclick="showLessonModal('${lessonId}', '${lessonTitle}', '${courseTitle}', '${lessonOrder}', '${lessonStatus}')">
+                                            ${lessonOrder}
+                                        </div>
+                                    `;
+                                }).join('')
+                                : '<div class="no-lessons">Нет уроков</div>';
+                            
+                            return `
                                 <div class="course-card">
                                     <div class="course-header">
                                         <div class="course-title">${course.title}</div>
                                         <div class="course-progress ${courseProgressClass}">${courseProgress}%</div>
                                     </div>
                                     <div class="lessons-container">
-                                        ${course.lessons.map(lesson => `
-                                            <div class="lesson-number ${lesson.status}" 
-                                                 title="${lesson.title} - ${getLessonStatusText(lesson.status)}"
-                                                 onclick="showLessonModal('${lesson.id}', '${lesson.title}', '${course.title}', '${lesson.order}', '${lesson.status}')">
-                                                ${lesson.order}
-                                            </div>
-                                        `).join('')}
+                                        ${lessonsHtml}
                                     </div>
                                 </div>
-                            `}).join('')}
+                            `;
+                        }).join('')
+                        : '<div class="no-courses">Нет курсов</div>';
+                    
+                    return `
+                        <div class="student-card">
+                            <div class="student-header">
+                                <div class="student-info">
+                                    <div class="student-name">${student.name}</div>
+                                    <div class="student-city">${student.city || 'Не указан'}</div>
+                                </div>
+                                <div class="overall-progress ${overallProgressClass}">${overallProgress}%</div>
+                            </div>
+                            <div class="courses-section">
+                                <div class="courses-grid">
+                                    ${coursesHtml}
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
-            `).join('');
+                    `;
+                }).filter(html => html.trim() !== '').join('');
+                
+                container.innerHTML = html || '<div class="loading">Нет данных для отображения</div>';
+                
+            } catch (error) {
+                console.error('Error rendering progress table:', error);
+                container.innerHTML = '<div class="error">Ошибка отображения данных</div>';
+            }
         }
 
         // Обновление фильтра городов для прогресса
