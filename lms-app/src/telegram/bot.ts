@@ -284,22 +284,45 @@ export class TelegramBot {
    * Показать промпт для отправки отчета
    */
   private async showSubmissionPrompt(chatId: number, studentId: string, state: StudentStateData): Promise<void> {
-    await this.sendMessage(chatId,
-      '📝 **Отправка отчета**\n\n' +
+    // Очищаем историю для аккуратного отображения
+    await this.clearChatHistory(chatId);
+    
+    const message = '📝 **Отправка отчета**\n\n' +
       'Отправьте файл (документ, изображение) с вашим отчетом.\n\n' +
       'Поддерживаемые форматы:\n' +
       '• Документы (PDF, DOC, DOCX)\n• Изображения (JPG, PNG)\n\n' +
-      '❗ После отправки файл автоматически будет передан на проверку'
-    );
+      '❗ После отправки файл автоматически будет передан на проверку';
+
+    const keyboard: InlineKeyboard = {
+      inline_keyboard: [[
+        { text: '❌ Отменить', callback_data: 'cancel_submission' },
+        { text: '🔙 К уроку', callback_data: `course_${state.courseId}` }
+      ]]
+    };
+
+    await this.sendMessageWithKeyboard(chatId, message, keyboard, studentId);
   }
 
   /**
    * Показать статус ожидания проверки
    */
   private async showReportPendingStatus(chatId: number, studentId: string, state: StudentStateData): Promise<void> {
-    const message = '⏳ **Отчет на проверке**\n\n' +
-                   'Ваш отчет передан администратору на проверку.\n' +
-                   'Вы получите уведомление о результате.';
+    // Очищаем историю для аккуратного отображения
+    await this.clearChatHistory(chatId);
+    
+    // Получаем информацию о текущем уроке для полного сообщения
+    let lessonTitle = 'урок';
+    if (state.lessonId) {
+      const lesson = await this.db.getLessonById(state.lessonId);
+      if (lesson) {
+        lessonTitle = lesson.title;
+      }
+    }
+
+    const message = `✅ **Отчет принят на проверку!**\n\n` +
+                   `**Урок:** ${lessonTitle}\n` +
+                   `**Статус:** На проверке ⏳\n\n` +
+                   `Вы получите уведомление, когда отчет будет проверен.`;
 
     const keyboard: InlineKeyboard = {
       inline_keyboard: [[
@@ -307,13 +330,16 @@ export class TelegramBot {
       ]]
     };
 
-    await this.sendMessageWithKeyboard(chatId, message, keyboard);
+    await this.sendMessageWithKeyboard(chatId, message, keyboard, studentId);
   }
 
   /**
    * Показать статус отклоненного отчета
    */
   private async showReportRejectedStatus(chatId: number, studentId: string, state: StudentStateData): Promise<void> {
+    // Очищаем историю для аккуратного отображения
+    await this.clearChatHistory(chatId);
+    
     let message = '❌ **Отчет отклонен**\n\n';
     
     if (state.reportId) {
@@ -332,13 +358,16 @@ export class TelegramBot {
       ]]
     };
 
-    await this.sendMessageWithKeyboard(chatId, message, keyboard);
+    await this.sendMessageWithKeyboard(chatId, message, keyboard, studentId);
   }
 
   /**
    * Показать статус завершенного урока
    */
   private async showLessonCompletedStatus(chatId: number, studentId: string, state: StudentStateData): Promise<void> {
+    // Очищаем историю для аккуратного отображения
+    await this.clearChatHistory(chatId);
+    
     const message = '🎉 **Урок завершен!**\n\n' +
                    'Поздравляем! Ваш отчет принят.\n' +
                    'Вы можете перейти к следующему уроку.';
@@ -350,7 +379,7 @@ export class TelegramBot {
       ]]
     };
 
-    await this.sendMessageWithKeyboard(chatId, message, keyboard);
+    await this.sendMessageWithKeyboard(chatId, message, keyboard, studentId);
   }
 
   /**
@@ -807,6 +836,10 @@ export class TelegramBot {
         });
       } else {
         await this.sendMessage(chatId, '❌ Отчет для этого урока уже отправлен');
+        
+        // Возвращаем в главное меню
+        await this.transitionStudentState(student.id, 'back_to_dashboard');
+        await this.showStatefulDashboard(chatId, student.id);
         return;
       }
 
@@ -846,15 +879,7 @@ export class TelegramBot {
         courseId: currentCourse.id
       });
 
-      // Уведомляем студента и показываем новое состояние
-      await this.sendMessage(chatId,
-        `✅ **Отчет принят на проверку!**\n\n` +
-        `**Урок:** ${currentLesson.title}\n` +
-        `**Статус:** На проверке ⏳\n\n` +
-        `Вы получите уведомление, когда отчет будет проверен.`
-      );
-
-      // Показываем состояние ожидания проверки
+      // Показываем только состояние ожидания проверки (убираем дублирование)
       const newState = await this.getStudentState(student.id);
       if (newState) {
         await this.showReportPendingStatus(chatId, student.id, newState);
