@@ -60,16 +60,47 @@ interface InlineKeyboardButton {
   callback_data: string;
 }
 
+interface KVNamespace {
+  get(key: string): Promise<string | null>;
+  put(key: string, value: string): Promise<void>;
+  delete(key: string): Promise<void>;
+}
+
+interface AdminState {
+  action: string;
+  reportId: string;
+}
+
 export class TelegramBot {
   private botToken: string;
   private db: DatabaseService;
   private adminChatId: string;
+  private kv: KVNamespace;
   private apiBase = 'https://api.telegram.org/bot';
 
-  constructor(token: string, db: DatabaseService, adminChatId: string) {
+  constructor(token: string, db: DatabaseService, adminChatId: string, kv: KVNamespace) {
     this.botToken = token;
     this.db = db;
     this.adminChatId = adminChatId;
+    this.kv = kv;
+  }
+
+  // Методы для управления состояниями админа
+  private async getAdminState(chatId: string): Promise<AdminState | null> {
+    try {
+      const stateStr = await this.kv.get(`admin_state_${chatId}`);
+      return stateStr ? JSON.parse(stateStr) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private async setAdminState(chatId: string, state: AdminState): Promise<void> {
+    await this.kv.put(`admin_state_${chatId}`, JSON.stringify(state));
+  }
+
+  private async clearAdminState(chatId: string): Promise<void> {
+    await this.kv.delete(`admin_state_${chatId}`);
   }
 
   // Обработка webhook обновлений
@@ -100,6 +131,15 @@ export class TelegramBot {
     if (text.startsWith('/')) {
       await this.handleCommand(message);
       return;
+    }
+
+    // Проверяем, является ли отправитель администратором и есть ли состояние
+    if (chatId.toString() === this.adminChatId) {
+      const adminState = await this.getAdminState(chatId.toString());
+      if (adminState && adminState.action === 'rejecting_report') {
+        await this.handleReportRejectionComment(adminState.reportId, text, chatId);
+        return;
+      }
     }
 
     // Обработка файлов для отчетов
@@ -513,6 +553,12 @@ export class TelegramBot {
         return;
       }
 
+      // Сохраняем состояние админа
+      await this.setAdminState(callbackQuery.message.chat.id.toString(), {
+        action: 'rejecting_report',
+        reportId: reportId
+      });
+
       // Просим админа написать комментарий
       await this.sendMessage(callbackQuery.message.chat.id,
         `📝 **Отклонение отчета**\n\n` +
@@ -525,6 +571,54 @@ export class TelegramBot {
     } catch (error: any) {
       console.error('Error rejecting report:', error);
       await this.answerCallbackQuery(callbackQuery.id, 'Ошибка при отклонении');
+    }
+  }
+
+  // Обработка комментария к отклонению отчета
+  private async handleReportRejectionComment(reportId: string, comment: string, adminChatId: number): Promise<void> {
+    try {
+      // Получаем отчет
+      const report = await this.db.getReportById(reportId);
+      if (!report) {
+        await this.sendMessage(adminChatId, '❌ Отчет не найден');
+        return;
+      }
+
+      // Отклоняем отчет с комментарием
+      await this.db.reviewReport(reportId, {
+        status: 'rejected',
+        admin_comment: comment.trim() || 'Требуется доработка',
+        reviewed_by: 'admin'
+      });
+
+      // Получаем данные для уведомления студента
+      const student = await this.db.getStudentById(report.student_id);
+      const lesson = await this.db.getLessonById(report.lesson_id);
+      
+      if (student && lesson) {
+        // Уведомляем студента
+        await this.sendMessage(student.tgid,
+          `❌ **Отчет отклонен**\n\n` +
+          `**Урок:** ${lesson.title}\n` +
+          `**Комментарий:** ${comment.trim() || 'Требуется доработка'}\n\n` +
+          `Пожалуйста, доработайте отчет и отправьте заново.\n\n` +
+          `Используйте /start для продолжения.`
+        );
+      }
+
+      // Уведомляем админа об успешном отклонении
+      await this.sendMessage(adminChatId,
+        `✅ **Отчет отклонен**\n\n` +
+        `Студент получил уведомление с вашим комментарием.`
+      );
+
+      // Очищаем состояние админа
+      await this.clearAdminState(adminChatId.toString());
+
+    } catch (error: any) {
+      console.error('Error processing report rejection:', error);
+      await this.sendMessage(adminChatId, '❌ Произошла ошибка при отклонении отчета');
+      await this.clearAdminState(adminChatId.toString());
     }
   }
 

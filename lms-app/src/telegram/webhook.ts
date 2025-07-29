@@ -1,14 +1,21 @@
 import { TelegramBot } from './bot';
 import { DatabaseService } from '../utils/database';
 
+interface KVNamespace {
+  get(key: string): Promise<string | null>;
+  put(key: string, value: string): Promise<void>;
+  delete(key: string): Promise<void>;
+}
+
 export async function handleTelegramWebhook(
   request: Request,
   db: DatabaseService,
   botToken: string,
-  adminChatId: string
+  adminChatId: string,
+  kv: KVNamespace
 ): Promise<Response> {
   try {
-    const bot = new TelegramBot(botToken, db, adminChatId);
+    const bot = new TelegramBot(botToken, db, adminChatId, kv);
     
     // Обрабатываем webhook от Telegram
     const update = await request.json();

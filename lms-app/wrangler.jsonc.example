@@ -17,5 +17,11 @@
       "database_name": "smj-lms-db",
               "database_id": "your_database_id_here"
     }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "BOT_STATE",
+      "id": "your_kv_namespace_id_here"
+    }
   ]
 } 

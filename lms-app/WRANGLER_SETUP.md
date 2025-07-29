@@ -10,14 +10,27 @@
 2. Отредактируйте `wrangler.jsonc` и замените:
    - `your_admin_password_here` - на ваш пароль администратора
    - `your_database_id_here` - на ID вашей D1 базы данных
+   - `your_kv_namespace_id_here` - на ID вашего KV namespace
 
-## Получение ID базы данных
+## Создание ресурсов
+
+### D1 База данных
 
 Чтобы получить ID базы данных D1:
 
 ```bash
 npx wrangler d1 list
 ```
+
+### KV Namespace
+
+Создайте KV namespace для хранения состояний бота:
+
+```bash
+npx wrangler kv:namespace create "BOT_STATE"
+```
+
+Эта команда выведет ID namespace'а, который нужно добавить в `wrangler.jsonc`.
 
 ## Важно
 

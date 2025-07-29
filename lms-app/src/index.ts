@@ -518,7 +518,12 @@ api.post('/telegram/webhook', async (c) => {
       return c.json({ error: 'Telegram bot not configured' }, 500);
     }
 
-    const response = await handleTelegramWebhook(c.req.raw, db, botToken, adminChatId);
+    const kv = c.env.BOT_STATE;
+    if (!kv) {
+      return c.json({ error: 'KV storage not configured' }, 500);
+    }
+
+    const response = await handleTelegramWebhook(c.req.raw, db, botToken, adminChatId, kv);
     return response;
   } catch (error: any) {
     return c.json({ error: 'Telegram webhook error' }, 500);
