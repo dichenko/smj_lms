@@ -593,8 +593,7 @@ export class TelegramBot {
       // Сортируем курсы по ID
       studentCourses.sort((a, b) => parseInt(a.course.id) - parseInt(b.course.id));
 
-      let message = `👋 Добро пожаловать, ${student.name}!\n\n`;
-      message += '📚 **Ваши курсы:**\n\n';
+      let message = '📚 **Ваши курсы:**\n\n';
 
       const buttons: InlineKeyboardButton[][] = [];
 
@@ -778,6 +777,10 @@ export class TelegramBot {
         await this.sendMessage(chatId, 
           '❌ Сначала выберите урок и нажмите "📝 Сдать отчет"'
         );
+        
+        // Возвращаем в главное меню
+        await this.transitionStudentState(student.id, 'back_to_dashboard');
+        await this.showStatefulDashboard(chatId, student.id);
         return;
       }
 
