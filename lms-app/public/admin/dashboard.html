@@ -201,6 +201,46 @@
             box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
         }
 
+        /* Стили для поля поиска с кнопкой очистки */
+        .search-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-input-wrapper input {
+            padding-right: 2.5rem;
+        }
+
+        .clear-search-btn {
+            position: absolute;
+            right: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #6c757d;
+            font-size: 1rem;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .clear-search-btn:hover {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .clear-search-btn:active {
+            background: #dee2e6;
+        }
+
         .filter-group select:hover,
         .filter-group input:hover {
             border-color: #bdc3c7;
@@ -1035,7 +1075,10 @@
                 </div>
                 <div class="filter-group">
                     <label>🔍 Поиск</label>
-                    <input type="text" id="progressSearchFilter" placeholder="Поиск по имени..." onkeyup="filterProgress()">
+                    <div class="search-input-wrapper">
+                        <input type="text" id="progressSearchFilter" placeholder="Поиск по имени..." onkeyup="filterProgress()">
+                        <button type="button" class="clear-search-btn" onclick="clearProgressSearch()" style="display: none;">✕</button>
+                    </div>
                 </div>
             </div>
             
@@ -1413,6 +1456,30 @@
         // Фильтрация прогресса
         function filterProgress() {
             renderProgressTable();
+            updateClearButton();
+        }
+
+        // Обновление видимости кнопки очистки поиска
+        function updateClearButton() {
+            const searchInput = document.getElementById('progressSearchFilter');
+            const clearBtn = document.querySelector('.clear-search-btn');
+            
+            if (searchInput && clearBtn) {
+                if (searchInput.value.trim() !== '') {
+                    clearBtn.style.display = 'flex';
+                } else {
+                    clearBtn.style.display = 'none';
+                }
+            }
+        }
+
+        // Очистка поиска прогресса
+        function clearProgressSearch() {
+            const searchInput = document.getElementById('progressSearchFilter');
+            if (searchInput) {
+                searchInput.value = '';
+                filterProgress();
+            }
         }
 
         // Получение текста статуса урока
@@ -1945,6 +2012,9 @@
             
             // Обработчики форм
             document.getElementById('addStudentForm').addEventListener('submit', addStudent);
+            
+            // Инициализация кнопки очистки поиска
+            updateClearButton();
         });
     </script>
 </body>
