@@ -964,6 +964,19 @@
             box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
         }
 
+        .btn-sm.btn-primary {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            border: none;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .btn-sm.btn-primary:hover {
+            background: linear-gradient(135deg, #2980b9, #1f5f8b);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+        }
+
         /* Стили для модального окна урока */
         .lesson-info {
             background: #f8f9fa;
@@ -1287,6 +1300,39 @@
         </div>
     </div>
 
+    <!-- Модальное окно редактирования студента -->
+    <div id="editStudentModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('editStudentModal')">&times;</span>
+            <h3>✏️ Редактировать студента</h3>
+            <form id="editStudentForm">
+                <input type="hidden" id="editStudentId">
+                <div class="form-group">
+                    <label>Telegram ID:</label>
+                    <input type="text" id="editStudentTgid" required>
+                </div>
+                <div class="form-group">
+                    <label>Имя:</label>
+                    <input type="text" id="editStudentName" required>
+                </div>
+                <div class="form-group">
+                    <label>Город:</label>
+                    <input type="text" id="editStudentCity" required>
+                </div>
+                <div class="form-group">
+                    <label>Курсы:</label>
+                    <div id="editCourseCheckboxes">
+                        <!-- Курсы будут загружены динамически -->
+                    </div>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn">💾 Сохранить</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('editStudentModal')">Отмена</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         let currentPage = 'progress';
         let students = [];
@@ -1580,6 +1626,7 @@
                     </td>
                     <td>
                         <div class="action-buttons">
+                            <button class="btn btn-sm btn-primary" onclick="editStudent('${student.id}')">✏️ Редактировать</button>
                             <button class="btn btn-sm" onclick="manageStudentCourses('${student.id}')">Курсы</button>
                             <button class="btn btn-sm btn-danger" onclick="deleteStudent('${student.id}')">Удалить</button>
                         </div>
@@ -2005,6 +2052,73 @@
             modal.style.display = 'block';
         }
 
+        // Редактирование студента
+        function editStudent(studentId) {
+            const student = students.find(s => s.id === studentId);
+            if (!student) return;
+            
+            // Заполняем форму данными студента
+            document.getElementById('editStudentId').value = student.id;
+            document.getElementById('editStudentTgid').value = student.tgid;
+            document.getElementById('editStudentName').value = student.name;
+            document.getElementById('editStudentCity').value = student.city;
+            
+            // Загружаем курсы и отмечаем текущие
+            const checkboxesContainer = document.getElementById('editCourseCheckboxes');
+            checkboxesContainer.innerHTML = courses.map(course => {
+                const isChecked = (student.courses || []).some(sc => sc.id === course.id);
+                return `
+                    <div class="course-checkbox-item">
+                        <label class="course-checkbox-label">
+                            <input type="checkbox" value="${course.id}" class="course-checkbox" ${isChecked ? 'checked' : ''}>
+                            <span class="course-checkbox-text">${course.title}</span>
+                        </label>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('editStudentModal').style.display = 'block';
+        }
+
+        // Сохранение изменений студента
+        async function updateStudent(event) {
+            event.preventDefault();
+            
+            const studentId = document.getElementById('editStudentId').value;
+            const tgid = document.getElementById('editStudentTgid').value;
+            const name = document.getElementById('editStudentName').value;
+            const city = document.getElementById('editStudentCity').value;
+            
+            // Получаем выбранные курсы
+            const selectedCourses = Array.from(document.querySelectorAll('#editCourseCheckboxes input:checked'))
+                .map(cb => cb.value);
+            
+            try {
+                const response = await fetch(`/api/students/${studentId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        tgid,
+                        name,
+                        city,
+                        course_ids: selectedCourses
+                    })
+                });
+                
+                if (!response.ok) throw new Error('Failed to update student');
+                
+                closeModal('editStudentModal');
+                loadStudents();
+                showMessage('Студент успешно обновлен', 'success');
+            } catch (error) {
+                console.error('Error updating student:', error);
+                showMessage('Ошибка при обновлении студента', 'error');
+            }
+        }
+
         // Инициализация
         document.addEventListener('DOMContentLoaded', function() {
             checkAuth();
@@ -2012,6 +2126,7 @@
             
             // Обработчики форм
             document.getElementById('addStudentForm').addEventListener('submit', addStudent);
+            document.getElementById('editStudentForm').addEventListener('submit', updateStudent);
             
             // Инициализация кнопки очистки поиска
             updateClearButton();
