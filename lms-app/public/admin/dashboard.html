@@ -561,6 +561,63 @@
             border-bottom: 1px solid #dee2e6;
         }
 
+        .course-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .lessons-row {
+            display: flex;
+            gap: 0.25rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .lesson-number {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+            position: relative;
+        }
+
+        .lesson-number:hover {
+            transform: scale(1.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .lesson-number.approved {
+            background: #d4edda;
+            color: #155724;
+            border-color: #c3e6cb;
+        }
+
+        .lesson-number.pending {
+            background: #fff3cd;
+            color: #856404;
+            border-color: #ffeaa7;
+        }
+
+        .lesson-number.rejected {
+            background: #f8d7da;
+            color: #721c24;
+            border-color: #f5c6cb;
+        }
+
+        .lesson-number.not_started {
+            background: #e9ecef;
+            color: #6c757d;
+            border-color: #ced4da;
+        }
+
         /* Стили для модального окна добавления студента */
         .modal-content {
             max-width: 500px;
@@ -834,6 +891,79 @@
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
         }
+
+        /* Стили для модального окна урока */
+        .lesson-info {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-row label {
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.95rem;
+        }
+
+        .lesson-number-display {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .lesson-title-display {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1rem;
+        }
+
+        .course-title-display {
+            color: #495057;
+            font-weight: 500;
+        }
+
+        .lesson-status-display {
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .lesson-status-display.approved {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .lesson-status-display.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .lesson-status-display.rejected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .lesson-status-display.not_started {
+            background: #e9ecef;
+            color: #6c757d;
+        }
     </style>
 </head>
 <body>
@@ -1075,6 +1205,13 @@
         </div>
     </div>
 
+    <!-- Модальное окно информации об уроке -->
+    <div id="lessonModal" class="modal">
+        <div class="modal-content">
+            <!-- Содержимое будет загружено динамически -->
+        </div>
+    </div>
+
     <script>
         let currentPage = 'progress';
         let students = [];
@@ -1207,16 +1344,20 @@
                                 const courseProgress = calculateCourseProgress(course);
                                 return `
                                 <div class="course-block">
-                                    <div class="course-title">
-                                        ${course.title}
-                                        <span class="course-progress">${courseProgress}%</span>
-                                    </div>
-                                    <div class="lessons-grid">
-                                        ${course.lessons.map(lesson => `
-                                            <div class="lesson-status ${lesson.status}" title="${lesson.title} - ${getLessonStatusText(lesson.status)}">
-                                                ${lesson.order}. ${lesson.title}
-                                            </div>
-                                        `).join('')}
+                                    <div class="course-row">
+                                        <div class="course-title">
+                                            ${course.title}
+                                            <span class="course-progress">${courseProgress}%</span>
+                                        </div>
+                                        <div class="lessons-row">
+                                            ${course.lessons.map(lesson => `
+                                                <div class="lesson-number ${lesson.status}" 
+                                                     title="${lesson.title} - ${getLessonStatusText(lesson.status)}"
+                                                     onclick="showLessonModal('${lesson.id}', '${lesson.title}', '${course.title}', '${lesson.order}', '${lesson.status}')">
+                                                    ${lesson.order}
+                                                </div>
+                                            `).join('')}
+                                        </div>
                                     </div>
                                 </div>
                             `}).join('')}
@@ -1724,6 +1865,43 @@
             main.insertBefore(message, main.firstChild);
             
             setTimeout(() => message.remove(), 5000);
+        }
+
+        // Показать модальное окно с информацией об уроке
+        function showLessonModal(lessonId, lessonTitle, courseTitle, lessonOrder, lessonStatus) {
+            const modal = document.getElementById('lessonModal');
+            const content = modal.querySelector('.modal-content');
+            
+            const statusText = getLessonStatusText(lessonStatus);
+            const statusClass = lessonStatus;
+            
+            content.innerHTML = `
+                <span class="close" onclick="closeModal('lessonModal')">&times;</span>
+                <h3>📚 Информация об уроке</h3>
+                <div class="lesson-info">
+                    <div class="info-row">
+                        <label>Номер урока:</label>
+                        <span class="lesson-number-display">${lessonOrder}</span>
+                    </div>
+                    <div class="info-row">
+                        <label>Название:</label>
+                        <span class="lesson-title-display">${lessonTitle}</span>
+                    </div>
+                    <div class="info-row">
+                        <label>Курс:</label>
+                        <span class="course-title-display">${courseTitle}</span>
+                    </div>
+                    <div class="info-row">
+                        <label>Статус:</label>
+                        <span class="lesson-status-display ${statusClass}">${statusText}</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <button class="btn btn-secondary" onclick="closeModal('lessonModal')">Закрыть</button>
+                </div>
+            `;
+            
+            modal.style.display = 'block';
         }
 
         // Инициализация
