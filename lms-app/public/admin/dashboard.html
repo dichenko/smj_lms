@@ -1187,6 +1187,14 @@
             color: white;
         }
 
+        .no-courses {
+            color: #6c757d;
+            font-style: italic;
+            text-align: center;
+            padding: 15px;
+            margin: 0;
+        }
+
         .progress-table .student-col {
             width: 250px;
             min-width: 250px;
@@ -2453,7 +2461,7 @@
         }
 
         // Редактирование студента
-        function editStudent(studentId) {
+        async function editStudent(studentId) {
             const student = students.find(s => s.id === studentId);
             if (!student) return;
             
@@ -2463,19 +2471,33 @@
             document.getElementById('editStudentName').value = student.name;
             document.getElementById('editStudentCity').value = student.city;
             
+            // Убеждаемся, что курсы загружены
+            if (courses.length === 0) {
+                console.log('Курсы не загружены, загружаем...');
+                await loadCourses();
+            }
+            
+            console.log('Курсы для отображения:', courses);
+            console.log('Курсы студента:', student.courses);
+            
             // Загружаем курсы как минималистичные кнопки
             const coursesContainer = document.getElementById('editCourseCheckboxes');
-            coursesContainer.innerHTML = courses.map(course => {
-                const isEnrolled = (student.courses || []).some(sc => sc.id === course.id);
-                return `
-                    <button type="button" 
-                            class="course-toggle-btn ${isEnrolled ? 'enrolled' : 'not-enrolled'}" 
-                            data-course-id="${course.id}"
-                            onclick="toggleStudentCourse(this, '${course.id}')">
-                        ${course.title}
-                    </button>
-                `;
-            }).join('');
+            
+            if (courses.length === 0) {
+                coursesContainer.innerHTML = '<p class="no-courses">Курсы не найдены</p>';
+            } else {
+                coursesContainer.innerHTML = courses.map(course => {
+                    const isEnrolled = (student.courses || []).some(sc => sc.id === course.id);
+                    return `
+                        <button type="button" 
+                                class="course-toggle-btn ${isEnrolled ? 'enrolled' : 'not-enrolled'}" 
+                                data-course-id="${course.id}"
+                                onclick="toggleStudentCourse(this, '${course.id}')">
+                            ${course.title}
+                        </button>
+                    `;
+                }).join('');
+            }
             
             document.getElementById('editStudentModal').style.display = 'block';
         }
