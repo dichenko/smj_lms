@@ -154,6 +154,23 @@ api.get('/students', requireAuth, async (c) => {
   }
 });
 
+// Детальный прогресс студентов
+api.get('/students/progress', requireAuth, async (c) => {
+  try {
+    const db = c.get('db');
+    const progress = await db.getDetailedStudentProgress();
+    return c.json({ progress });
+  } catch (error: any) {
+    const db = c.get('db');
+    await db.logError({
+      source: 'api',
+      message: `Failed to get student progress: ${error.message}`,
+      meta: { error: error.toString() }
+    });
+    return c.json({ error: 'Failed to get student progress' }, 500);
+  }
+});
+
 api.post('/students', requireAuth, async (c) => {
   try {
     const db = c.get('db');

@@ -337,6 +337,119 @@
             padding: 0.25rem 0.5rem;
             font-size: 0.8rem;
         }
+
+        /* Стили для таблицы прогресса */
+        .progress-table-wrapper {
+            overflow-x: auto;
+        }
+
+        .progress-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .progress-table th {
+            background: #f8f9fa;
+            color: #495057;
+            font-weight: 600;
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .progress-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #dee2e6;
+            vertical-align: top;
+        }
+
+        .student-column {
+            width: 200px;
+            min-width: 200px;
+        }
+
+        .courses-column {
+            width: auto;
+        }
+
+        .student-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .student-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .student-city {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .courses-progress {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .course-block {
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 0.75rem;
+            background: #f8f9fa;
+        }
+
+        .course-title {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .lessons-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .lesson-status {
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .lesson-status.approved {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .lesson-status.pending {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .lesson-status.rejected {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .lesson-status.not_started {
+            background: #e9ecef;
+            color: #6c757d;
+            border: 1px solid #ced4da;
+        }
     </style>
 </head>
 <body>
@@ -352,7 +465,8 @@
 
     <div class="nav">
         <div class="nav-content">
-            <div class="nav-item active" onclick="showPage('students')">Студенты</div>
+            <div class="nav-item active" onclick="showPage('progress')">Прогресс студентов</div>
+            <div class="nav-item" onclick="showPage('students')">Управление студентами</div>
             <div class="nav-item" onclick="showPage('courses')">Курсы</div>
             <div class="nav-item" onclick="showPage('reports')">Отчеты</div>
             <div class="nav-item" onclick="showPage('logs')">Логи</div>
@@ -360,8 +474,38 @@
     </div>
 
     <div class="main">
+        <!-- Страница прогресса студентов -->
+        <div id="progress-page" class="page">
+            <div class="page-header">
+                <h2>📊 Прогресс студентов</h2>
+            </div>
+            
+            <div class="filters">
+                <select id="progressCityFilter" onchange="filterProgress()">
+                    <option value="">Все города</option>
+                </select>
+                <input type="text" id="progressSearchFilter" placeholder="Поиск по имени..." onkeyup="filterProgress()">
+            </div>
+            
+            <div class="table-container">
+                <div class="progress-table-wrapper">
+                    <table class="progress-table">
+                        <thead>
+                            <tr>
+                                <th class="student-column">Студент</th>
+                                <th class="courses-column">Курсы и прогресс</th>
+                            </tr>
+                        </thead>
+                        <tbody id="progressTableBody">
+                            <tr><td colspan="2" class="loading">Загрузка данных...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <!-- Страница студентов -->
-        <div id="students-page" class="page">
+        <div id="students-page" class="page" style="display: none;">
             <div class="page-header">
                 <h2 class="page-title">Управление студентами</h2>
                 <button class="btn" onclick="showAddStudentModal()">Добавить студента</button>
@@ -542,11 +686,12 @@
     </div>
 
     <script>
-        let currentPage = 'students';
+        let currentPage = 'progress';
         let students = [];
         let courses = [];
         let reports = [];
         let logs = [];
+        let progressData = [];
 
         // Проверка авторизации
         async function checkAuth() {
@@ -592,6 +737,9 @@
             
             // Загружаем данные для страницы
             switch(page) {
+                case 'progress':
+                    loadProgress();
+                    break;
                 case 'students':
                     loadStudents();
                     break;
@@ -604,6 +752,102 @@
                 case 'logs':
                     loadLogs();
                     break;
+            }
+        }
+
+        // Загрузка прогресса студентов
+        async function loadProgress() {
+            try {
+                const response = await fetch('/api/students/progress', {
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) throw new Error('Failed to load progress');
+                
+                const data = await response.json();
+                progressData = data.progress || [];
+                renderProgressTable();
+                updateProgressCityFilter();
+            } catch (error) {
+                console.error('Error loading progress:', error);
+                document.getElementById('progressTableBody').innerHTML = 
+                    '<tr><td colspan="2" class="error">Ошибка загрузки данных</td></tr>';
+            }
+        }
+
+        // Отображение таблицы прогресса
+        function renderProgressTable() {
+            const tbody = document.getElementById('progressTableBody');
+            const cityFilter = document.getElementById('progressCityFilter').value;
+            const searchFilter = document.getElementById('progressSearchFilter').value.toLowerCase();
+            
+            let filteredData = progressData;
+            
+            if (cityFilter) {
+                filteredData = filteredData.filter(student => student.city === cityFilter);
+            }
+            
+            if (searchFilter) {
+                filteredData = filteredData.filter(student => 
+                    student.name.toLowerCase().includes(searchFilter)
+                );
+            }
+            
+            if (filteredData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="2" class="loading">Студенты не найдены</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = filteredData.map(student => `
+                <tr>
+                    <td class="student-column">
+                        <div class="student-info">
+                            <div class="student-name">${student.name}</div>
+                            <div class="student-city">${student.city}</div>
+                        </div>
+                    </td>
+                    <td class="courses-column">
+                        <div class="courses-progress">
+                            ${student.courses.map(course => `
+                                <div class="course-block">
+                                    <div class="course-title">${course.title}</div>
+                                    <div class="lessons-grid">
+                                        ${course.lessons.map(lesson => `
+                                            <div class="lesson-status ${lesson.status}" title="${lesson.title} - ${getLessonStatusText(lesson.status)}">
+                                                ${lesson.order}. ${lesson.title}
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Обновление фильтра городов для прогресса
+        function updateProgressCityFilter() {
+            const cities = [...new Set(progressData.map(student => student.city))].sort();
+            const select = document.getElementById('progressCityFilter');
+            
+            select.innerHTML = '<option value="">Все города</option>' +
+                cities.map(city => `<option value="${city}">${city}</option>`).join('');
+        }
+
+        // Фильтрация прогресса
+        function filterProgress() {
+            renderProgressTable();
+        }
+
+        // Получение текста статуса урока
+        function getLessonStatusText(status) {
+            switch(status) {
+                case 'approved': return 'Пройден';
+                case 'pending': return 'На проверке';
+                case 'rejected': return 'Отклонен';
+                case 'not_started': return 'Не начат';
+                default: return status;
             }
         }
 
@@ -1025,7 +1269,7 @@
         // Инициализация
         document.addEventListener('DOMContentLoaded', function() {
             checkAuth();
-            loadStudents();
+            loadProgress(); // Загружаем прогресс по умолчанию
             
             // Обработчики форм
             document.getElementById('addStudentForm').addEventListener('submit', addStudent);

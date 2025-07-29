@@ -563,4 +563,71 @@ export class DatabaseService {
     
     return { completed, total, percentage };
   }
+
+  // Получить детальный прогресс всех студентов по всем курсам и урокам
+  async getDetailedStudentProgress(): Promise<any[]> {
+    const result = await this.db.prepare(`
+      SELECT 
+        s.id as student_id,
+        s.name as student_name,
+        s.city as student_city,
+        c.id as course_id,
+        c.title as course_title,
+        l.id as lesson_id,
+        l.title as lesson_title,
+        l.order_num as lesson_order,
+        r.status as lesson_status,
+        r.submitted_at as lesson_submitted_at
+      FROM students s
+      JOIN student_courses sc ON s.id = sc.student_id AND sc.is_active = 1
+      JOIN courses c ON sc.course_id = c.id
+      JOIN lessons l ON c.id = l.course_id
+      LEFT JOIN reports r ON s.id = r.student_id AND l.id = r.lesson_id
+      ORDER BY s.name, c.title, l.order_num
+    `).all();
+
+    // Группируем данные по студентам
+    const studentsMap = new Map<string, any>();
+    
+    for (const row of result.results as any[]) {
+      const studentId = row.student_id;
+      
+      if (!studentsMap.has(studentId)) {
+        studentsMap.set(studentId, {
+          id: studentId,
+          name: row.student_name,
+          city: row.student_city,
+          courses: new Map()
+        });
+      }
+      
+      const student = studentsMap.get(studentId)!;
+      const courseId = row.course_id;
+      
+      if (!student.courses.has(courseId)) {
+        student.courses.set(courseId, {
+          id: courseId,
+          title: row.course_title,
+          lessons: []
+        });
+      }
+      
+      const course = student.courses.get(courseId)!;
+      course.lessons.push({
+        id: row.lesson_id,
+        title: row.lesson_title,
+        order: row.lesson_order,
+        status: row.lesson_status || 'not_started',
+        submitted_at: row.lesson_submitted_at
+      });
+    }
+    
+    // Преобразуем Maps в обычные объекты
+    const students = Array.from(studentsMap.values()).map(student => ({
+      ...student,
+      courses: Array.from(student.courses.values())
+    }));
+    
+    return students;
+  }
 } 
