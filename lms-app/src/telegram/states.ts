@@ -30,6 +30,8 @@ export interface StudentStateData {
     previousState?: StudentState;
     messageId?: number;       // ID сообщения для редактирования
     submissionAttempts?: number; // Количество попыток сдачи
+    hasSeenWelcome?: boolean; // Показывалось ли приветствие
+    telegramName?: string;    // Имя пользователя из Telegram
   };
 }
 
@@ -65,13 +67,14 @@ export class StudentStateMachine {
   /**
    * Инициализировать состояние для нового студента
    */
-  static createInitialState(courseId?: string): StudentStateData {
+  static createInitialState(courseId?: string, showWelcome: boolean = true): StudentStateData {
     return {
-      state: StudentState.WELCOME,
+      state: showWelcome ? StudentState.WELCOME : StudentState.DASHBOARD,
       courseId,
       lastActivity: new Date().toISOString(),
       context: {
-        submissionAttempts: 0
+        submissionAttempts: 0,
+        hasSeenWelcome: !showWelcome
       }
     };
   }

@@ -123,8 +123,23 @@ export class TelegramBot {
   /**
    * Инициализировать состояние для нового студента
    */
-  private async initializeStudentState(studentId: string, courseId?: string): Promise<StudentStateData> {
-    const initialState = StudentStateMachine.createInitialState(courseId);
+  private async initializeStudentState(studentId: string, courseId?: string, showWelcome: boolean = true): Promise<StudentStateData> {
+    const initialState = StudentStateMachine.createInitialState(courseId, showWelcome);
+    await this.updateStudentState(studentId, initialState);
+    return initialState;
+  }
+
+  /**
+   * Инициализировать состояние с Telegram данными
+   */
+  private async initializeStudentStateWithTelegram(studentId: string, courseId?: string, showWelcome: boolean = true, telegramName?: string): Promise<StudentStateData> {
+    const initialState = StudentStateMachine.createInitialState(courseId, showWelcome);
+    if (telegramName) {
+      initialState.context = {
+        ...initialState.context,
+        telegramName
+      };
+    }
     await this.updateStudentState(studentId, initialState);
     return initialState;
   }
@@ -219,13 +234,19 @@ export class TelegramBot {
   // === МЕТОДЫ ОТОБРАЖЕНИЯ ДЛЯ КАЖДОГО СОСТОЯНИЯ ===
 
   /**
-   * Показать экран приветствия
+   * Показать экран приветствия (только один раз)
    */
   private async showWelcomeScreen(chatId: number, studentId: string): Promise<void> {
-    const student = await this.db.getStudentById(studentId);
-    if (!student) return;
+    // Получаем текущее состояние для доступа к Telegram имени
+    const currentState = await this.getStudentState(studentId);
+    const telegramName = currentState?.context?.telegramName || 'Пользователь';
+    
+    // Отмечаем, что приветствие показано
+    await this.transitionStudentState(studentId, 'show_welcome', {
+      context: { hasSeenWelcome: true }
+    });
 
-    const message = `👋 **Добро пожаловать, ${student.name}!**\n\n` +
+    const message = `👋 **Добро пожаловать, ${telegramName}!**\n\n` +
                    `🎓 Добро пожаловать в SMJ LMS!\n` +
                    `📚 Готовы начать обучение?`;
 
@@ -239,10 +260,13 @@ export class TelegramBot {
   }
 
   /**
-   * Показать дашборд с состояниями
+   * Показать дашборд с состояниями (с очисткой истории)
    */
   private async showStatefulDashboard(chatId: number, studentId: string): Promise<void> {
-    // Пока используем существующий метод, но с обновлением состояния
+    // Очищаем историю чата для красивого отображения
+    await this.clearChatHistory(chatId);
+    
+    // Обновляем состояние и показываем дашборд
     await this.transitionStudentState(studentId, 'refresh');
     await this.showStudentDashboard(chatId, studentId);
   }
@@ -505,8 +529,13 @@ export class TelegramBot {
       let studentState = await this.getStudentState(student.id);
       
       if (!studentState) {
-        // Инициализируем состояние для нового студента
-        studentState = await this.initializeStudentState(student.id);
+        // Инициализируем состояние для нового студента (показываем приветствие только первый раз)
+        const telegramName = message.from.first_name || message.from.username || 'Пользователь';
+        studentState = await this.initializeStudentStateWithTelegram(student.id, undefined, true, telegramName);
+      } else if (studentState.context?.hasSeenWelcome && studentState.state === StudentState.WELCOME) {
+        // Если приветствие уже показывалось, переходим сразу к дашборду
+        const newState = await this.transitionStudentState(student.id, 'auto');
+        if (newState) studentState = newState;
       }
 
       // Обрабатываем в зависимости от текущего состояния
@@ -723,43 +752,45 @@ export class TelegramBot {
         return;
       }
 
-      // Получаем все курсы студента
-      const studentCourses = await this.db.getStudentCourses(student.id);
-      
-      if (studentCourses.length === 0) {
-        await this.sendMessage(chatId, '❌ У вас нет назначенных курсов');
+      // Используем курс из состояния студента, а не ищем среди всех курсов
+      const targetCourseId = studentState.courseId;
+      if (!targetCourseId) {
+        await this.sendMessage(chatId, '❌ Не найден текущий курс. Попробуйте выбрать курс заново.');
         return;
       }
 
-      // Находим первый курс с незавершенными уроками
-      let currentLesson = null;
-      let currentCourse = null;
+      // Получаем конкретный курс из состояния
+      const course = await this.db.getCourseById(targetCourseId);
+      const studentCourses = await this.db.getStudentCourses(student.id);
+      const studentCourse = studentCourses.find(sc => sc.course_id === targetCourseId && sc.is_active);
+
+      if (!course || !studentCourse) {
+        await this.sendMessage(chatId, '❌ Курс не найден или недоступен');
+        return;
+      }
+
+      // Находим текущий незавершенный урок в ЭТОМ конкретном курсе
+      const lessons = await this.db.getLessonsByCourse(targetCourseId);
+      lessons.sort((a, b) => a.order_num - b.order_num);
+
       const reports = await this.db.getAllReports();
       const studentReports = reports.filter(r => r.student_id === student.id);
 
-      // Проходим по всем курсам студента и ищем первый незавершенный урок
-      for (const studentCourse of studentCourses) {
-        if (!studentCourse.is_active) continue;
-
-        const lessons = await this.db.getLessonsByCourse(studentCourse.course_id);
-        lessons.sort((a, b) => a.order_num - b.order_num);
-
-        for (const lesson of lessons) {
-          const report = studentReports.find(r => r.lesson_id === lesson.id);
-          if (!report || report.status !== 'approved') {
-            currentLesson = lesson;
-            currentCourse = studentCourse.course;
-            break;
-          }
+      let currentLesson = null;
+      for (const lesson of lessons) {
+        const report = studentReports.find(r => r.lesson_id === lesson.id);
+        if (!report || report.status !== 'approved') {
+          currentLesson = lesson;
+          break;
         }
-
-        if (currentLesson) break;
       }
 
-      if (!currentLesson || !currentCourse) {
-        await this.sendMessage(chatId, '❌ Нет доступных уроков для сдачи отчета');
+      if (!currentLesson) {
+        await this.sendMessage(chatId, '❌ Все уроки в этом курсе уже завершены');
         return;
       }
+
+      const currentCourse = course;
 
       // Создаем или обновляем отчет
       const existingReport = studentReports.find(r => r.lesson_id === currentLesson.id);
@@ -1090,5 +1121,31 @@ export class TelegramBot {
   // Отправка уведомления администратору
   async sendNotificationToAdmin(message: string): Promise<boolean> {
     return this.sendMessage(this.adminChatId, message);
+  }
+
+  /**
+   * Очистить историю чата (удалить предыдущие сообщения)
+   */
+  private async clearChatHistory(chatId: number, keepLastN: number = 1): Promise<void> {
+    try {
+      // В Telegram нельзя массово удалять сообщения в личных чатах
+      // Но можно отправить "разделитель" для визуальной очистки
+      await this.sendMessage(chatId, '🏠 ═══════════════════════');
+    } catch (error) {
+      // Игнорируем ошибки очистки - не критично
+      console.log('Chat clear failed (non-critical):', error);
+    }
+  }
+
+  /**
+   * Отправить сообщение с предварительной очисткой истории
+   */
+  private async sendMessageWithClearHistory(chatId: number, text: string, keyboard?: InlineKeyboard): Promise<boolean> {
+    await this.clearChatHistory(chatId);
+    if (keyboard) {
+      return this.sendMessageWithKeyboard(chatId, text, keyboard);
+    } else {
+      return this.sendMessage(chatId, text);
+    }
   }
 } 
