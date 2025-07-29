@@ -628,31 +628,31 @@
 
         .modal-content h3 {
             color: #2c3e50;
-            margin-bottom: 1rem;
-            font-size: 1.3rem;
+            margin-bottom: 0.75rem;
+            font-size: 1.2rem;
             font-weight: 600;
             border-bottom: 2px solid #3498db;
-            padding-bottom: 0.4rem;
+            padding-bottom: 0.3rem;
         }
 
         .form-group {
-            margin-bottom: 1rem;
+            margin-bottom: 0.75rem;
         }
 
         .form-group label {
             display: block;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.4rem;
             font-weight: 600;
             color: #34495e;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
         }
 
         .form-group input[type="text"] {
             width: 100%;
-            padding: 0.6rem;
+            padding: 0.5rem;
             border: 2px solid #e1e8ed;
             border-radius: 8px;
-            font-size: 1rem;
+            font-size: 0.95rem;
             transition: all 0.3s ease;
             box-sizing: border-box;
         }
@@ -665,12 +665,8 @@
 
         /* Стили для чекбоксов курсов */
         #courseCheckboxes {
-            border: 2px solid #e1e8ed;
-            border-radius: 8px;
-            padding: 0.75rem;
-            background: #f8f9fa;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            display: flex;
+            flex-direction: column;
             gap: 0.5rem;
         }
 
@@ -682,16 +678,20 @@
             display: flex;
             align-items: center;
             cursor: pointer;
-            padding: 0.4rem 0.6rem;
-            border-radius: 6px;
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
             transition: all 0.2s ease;
             user-select: none;
             background: white;
-            border: 1px solid #e1e8ed;
+            border: 2px solid #e1e8ed;
+            width: 100%;
         }
 
         .course-checkbox-label:hover {
             background: rgba(52, 152, 219, 0.05);
+            border-color: #3498db;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.1);
         }
 
         .course-checkbox {
@@ -730,10 +730,11 @@
         }
 
         .course-checkbox-text {
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             color: #2c3e50;
             font-weight: 500;
             line-height: 1.3;
+            flex: 1;
         }
 
         /* Стили для кнопок в модальном окне */
@@ -741,8 +742,8 @@
             display: flex;
             gap: 1rem;
             justify-content: flex-end;
-            margin-top: 1.5rem;
-            padding-top: 0.75rem;
+            margin-top: 1rem;
+            padding-top: 0.5rem;
             border-top: 1px solid #e1e8ed;
         }
 
