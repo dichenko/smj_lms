@@ -442,207 +442,174 @@
             font-size: 0.8rem;
         }
 
-        /* Стили для таблицы прогресса */
-        .progress-table-wrapper {
-            overflow-x: auto;
+        /* Новый дизайн для страницы прогресса студентов */
+        .progress-page {
+            max-width: 1200px;
+            margin: 0 auto;
         }
 
-        .progress-table {
-            width: 100%;
-            border-collapse: collapse;
+        .progress-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        .student-card {
             background: white;
-            border-radius: 8px;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e9ecef;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
         }
 
-        .progress-table th {
-            background: #f8f9fa;
-            color: #495057;
-            font-weight: 600;
-            padding: 1rem;
-            text-align: left;
-            border-bottom: 2px solid #dee2e6;
+        .student-card:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+            transform: translateY(-2px);
         }
 
-        .progress-table td {
-            padding: 1rem;
-            border-bottom: 1px solid #dee2e6;
-            vertical-align: top;
-            word-wrap: break-word;
-        }
-
-        .progress-table td.student-column {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .student-column {
-            width: 300px;
-            min-width: 300px;
-        }
-
-        .courses-column {
-            width: auto;
+        .student-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .student-info {
             display: flex;
             flex-direction: column;
-            gap: 0.25rem;
-        }
-
-        .student-name {
-            font-weight: 600;
-            color: #333;
-        }
-
-        .student-city {
-            color: #666;
-            font-size: 0.9rem;
-        }
-
-        .courses-progress {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .course-block {
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
-            padding: 1rem;
-            background: white;
-            margin-bottom: 1rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        }
-
-        .course-block:last-child {
-            margin-bottom: 0;
-        }
-
-        .course-title {
-            font-weight: 600;
-            color: #495057;
-            margin-bottom: 0.5rem;
-            padding-bottom: 0.25rem;
-            border-bottom: 1px solid #dee2e6;
-        }
-
-        .lessons-grid {
-            display: flex;
-            flex-wrap: wrap;
             gap: 0.5rem;
         }
 
-        .lesson-status {
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            white-space: nowrap;
-        }
-
-        .lesson-status.approved {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .lesson-status.pending {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
-        }
-
-        .lesson-status.rejected {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .lesson-status.not_started {
-            background: #e9ecef;
-            color: #6c757d;
-            border: 1px solid #ced4da;
-        }
-
-        /* Стили для процентов прогресса */
-        .overall-progress {
-            background: #6c757d;
+        .student-name {
+            font-size: 1.3rem;
+            font-weight: 700;
             color: white;
-            padding: 0.25rem 0.5rem;
-            border-radius: 12px;
-            font-size: 0.8rem;
+            margin: 0;
+        }
+
+        .student-city {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .overall-progress {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 1rem;
             font-weight: 600;
-            margin-left: 0.5rem;
-            display: inline-block;
-            min-width: 40px;
-            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
 
         .overall-progress.zero {
-            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            background: rgba(231, 76, 60, 0.9);
+        }
+
+        .courses-section {
+            padding: 1.5rem;
+        }
+
+        .courses-grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .course-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1.25rem;
+            border: 1px solid #e9ecef;
+            transition: all 0.2s ease;
+        }
+
+        .course-card:hover {
+            background: #e9ecef;
+            transform: translateX(4px);
+        }
+
+        .course-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .course-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
         }
 
         .course-progress {
             background: #6c757d;
             color: white;
-            padding: 0.2rem 0.4rem;
-            border-radius: 8px;
-            font-size: 0.75rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.85rem;
             font-weight: 600;
-            margin-left: 0.5rem;
-            display: inline-block;
-            min-width: 35px;
-            text-align: center;
         }
 
         .course-progress.zero {
             background: linear-gradient(135deg, #e74c3c, #c0392b);
         }
 
-        .student-name {
+        .lessons-container {
             display: flex;
-            align-items: center;
-            font-weight: 600;
-            color: #2c3e50;
-            font-size: 1.1rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            gap: 0.5rem;
+            flex-wrap: wrap;
         }
 
-        .course-title {
+        .lesson-number {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: center;
+            font-size: 0.9rem;
             font-weight: 600;
-            color: #495057;
-            margin-bottom: 0.5rem;
-            padding-bottom: 0.25rem;
-            border-bottom: 1px solid #dee2e6;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+            position: relative;
         }
 
-        .course-row {
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
+        .lesson-number:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
-        .course-title {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            font-weight: 600;
-            color: #495057;
-            margin-bottom: 0.5rem;
-            padding-bottom: 0.25rem;
-            border-bottom: 1px solid #dee2e6;
-            min-width: 200px;
-            flex-shrink: 0;
+        .lesson-number.approved {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+            border-color: #27ae60;
         }
+
+        .lesson-number.pending {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+            border-color: #e67e22;
+        }
+
+        .lesson-number.rejected {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            border-color: #c0392b;
+        }
+
+
+
+
+        /* Стили для модального окна добавления студента */
 
         .lessons-row {
             display: flex;
@@ -1105,19 +1072,9 @@
                 </div>
             </div>
             
-            <div class="table-container">
-                <div class="progress-table-wrapper">
-                    <table class="progress-table">
-                        <thead>
-                            <tr>
-                                <th class="student-column">Студент</th>
-                                <th class="courses-column">Курсы и прогресс</th>
-                            </tr>
-                        </thead>
-                        <tbody id="progressTableBody">
-                            <tr><td colspan="2" class="loading">Загрузка данных...</td></tr>
-                        </tbody>
-                    </table>
+            <div class="progress-page">
+                <div class="progress-grid" id="progressTableBody">
+                    <div class="loading">Загрузка данных...</div>
                 </div>
             </div>
         </div>
@@ -1456,48 +1413,45 @@
                 return;
             }
             
-            tbody.innerHTML = filteredData.map(student => {
+            const container = document.getElementById('progressTableBody');
+            container.innerHTML = filteredData.map(student => {
                 const overallProgress = calculateOverallProgress(student);
                 const overallProgressClass = overallProgress === 0 ? 'zero' : '';
                 return `
-                <tr>
-                    <td class="student-column">
+                <div class="student-card">
+                    <div class="student-header">
                         <div class="student-info">
-                            <div class="student-name">
-                                ${student.name}
-                                <span class="overall-progress ${overallProgressClass}">${overallProgress}%</span>
-                            </div>
+                            <div class="student-name">${student.name}</div>
                             <div class="student-city">${student.city}</div>
                         </div>
-                    </td>
-                    <td class="courses-column">
-                        <div class="courses-progress">
+                        <div class="overall-progress ${overallProgressClass}">${overallProgress}%</div>
+                    </div>
+                    <div class="courses-section">
+                        <div class="courses-grid">
                             ${student.courses.map(course => {
                                 const courseProgress = calculateCourseProgress(course);
                                 const courseProgressClass = courseProgress === 0 ? 'zero' : '';
                                 return `
-                                <div class="course-block">
-                                    <div class="course-row">
-                                        <div class="course-title">
-                                            ${course.title}
-                                            <span class="course-progress ${courseProgressClass}">${courseProgress}%</span>
-                                        </div>
-                                        <div class="lessons-row">
-                                            ${course.lessons.map(lesson => `
-                                                <div class="lesson-number ${lesson.status}" 
-                                                     title="${lesson.title} - ${getLessonStatusText(lesson.status)}"
-                                                     onclick="showLessonModal('${lesson.id}', '${lesson.title}', '${course.title}', '${lesson.order}', '${lesson.status}')">
-                                                    ${lesson.order}
-                                                </div>
-                                            `).join('')}
-                                        </div>
+                                <div class="course-card">
+                                    <div class="course-header">
+                                        <div class="course-title">${course.title}</div>
+                                        <div class="course-progress ${courseProgressClass}">${courseProgress}%</div>
+                                    </div>
+                                    <div class="lessons-container">
+                                        ${course.lessons.map(lesson => `
+                                            <div class="lesson-number ${lesson.status}" 
+                                                 title="${lesson.title} - ${getLessonStatusText(lesson.status)}"
+                                                 onclick="showLessonModal('${lesson.id}', '${lesson.title}', '${course.title}', '${lesson.order}', '${lesson.status}')">
+                                                ${lesson.order}
+                                            </div>
+                                        `).join('')}
                                     </div>
                                 </div>
                             `}).join('')}
                         </div>
-                    </td>
-                </tr>
-            `}).join('');
+                    </div>
+                </div>
+            `).join('');
         }
 
         // Обновление фильтра городов для прогресса
