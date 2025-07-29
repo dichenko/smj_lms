@@ -442,6 +442,50 @@
             font-size: 0.8rem;
         }
 
+        /* Стили для иконочных кнопок */
+        .btn-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin: 0 0.25rem;
+        }
+
+        .btn-icon:hover {
+            transform: scale(1.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-edit {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background: linear-gradient(135deg, #2980b9, #1f5f8b);
+        }
+
+        .btn-delete {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: linear-gradient(135deg, #c0392b, #a93226);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
         /* Новый дизайн для страницы прогресса студентов */
         .progress-page {
             max-width: 1200px;
@@ -1590,9 +1634,8 @@
                     </td>
                     <td>
                         <div class="action-buttons">
-                            <button class="btn btn-sm btn-primary" onclick="editStudent('${student.id}')">✏️ Редактировать</button>
-                            <button class="btn btn-sm" onclick="manageStudentCourses('${student.id}')">Курсы</button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteStudent('${student.id}')">Удалить</button>
+                            <button class="btn btn-icon btn-edit" onclick="editStudent('${student.id}')" title="Редактировать">✏️</button>
+                            <button class="btn btn-icon btn-delete" onclick="deleteStudent('${student.id}')" title="Удалить">✕</button>
                         </div>
                     </td>
                 </tr>
@@ -1653,8 +1696,8 @@
                     <td>${course.students ? course.students.length : 0}</td>
                     <td>
                         <div class="action-buttons">
-                            <button class="btn btn-sm" onclick="editCourse('${course.id}')">Редактировать</button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteCourse('${course.id}')">Удалить</button>
+                            <button class="btn btn-icon btn-edit" onclick="editCourse('${course.id}')" title="Редактировать">✏️</button>
+                            <button class="btn btn-icon btn-delete" onclick="deleteCourse('${course.id}')" title="Удалить">✕</button>
                         </div>
                     </td>
                 </tr>
