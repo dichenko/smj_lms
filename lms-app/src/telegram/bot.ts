@@ -432,8 +432,33 @@ export class TelegramBot {
       
     } else if (data.startsWith('submit_')) {
       const lessonId = data.replace('submit_', '');
+      
+      // ОТЛАДКА: Логируем переход состояния для тестового студента
+      const currentState = await this.getStudentState(studentId);
+      const student = await this.db.getStudentById(studentId);
+      if (student && student.name.includes('Тестовый')) {
+        console.log(`🔍 DEBUG: Студент "${student.name}" нажал "Сдать отчет"`);
+        console.log(`📊 Состояние ДО перехода:`, currentState);
+        await this.db.logError({
+          source: 'debug_submit_button',
+          message: `Студент ${student.name} нажал кнопку "Сдать отчет". Переход: ${currentState?.state} -> AWAITING_SUBMISSION`,
+          meta: { studentId, lessonId, currentState }
+        });
+      }
+
       await this.transitionStudentState(studentId, 'submit_report', { lessonId });
       const newState = await this.getStudentState(studentId);
+      
+      // ОТЛАДКА: Логируем состояние ПОСЛЕ перехода
+      if (student && student.name.includes('Тестовый')) {
+        console.log(`📊 Состояние ПОСЛЕ перехода:`, newState);
+        await this.db.logError({
+          source: 'debug_after_transition',
+          message: `Состояние после перехода: ${newState?.state}`,
+          meta: { studentId, newState }
+        });
+      }
+      
       if (newState) {
         await this.showSubmissionPrompt(chatId, studentId, newState);
       }
@@ -772,10 +797,36 @@ export class TelegramBot {
       // Проверяем состояние студента
       const studentState = await this.getStudentState(student.id);
       
+      // ОТЛАДКА: Для тестового студента - сбрасываем состояние при проблемах
+      if (student.name.includes('Тестовый')) {
+        console.log(`🔍 DEBUG: Студент "${student.name}" (ID: ${student.id}) отправил файл`);
+        console.log(`📊 Текущее состояние:`, studentState);
+        
+        // Если состояние не найдено или неправильное - сбрасываем
+        if (!studentState || studentState.state !== StudentState.AWAITING_SUBMISSION) {
+          console.log(`🔧 RESET: Сбрасываем состояние для тестового студента`);
+          await this.kv.delete(`student_state_${student.id}`);
+          
+          await this.sendMessage(chatId, 
+            `🔧 **Отладка - состояние сброшено**\n\n` +
+            `Ваше состояние было: ${studentState ? studentState.state : 'не найдено'}\n\n` +
+            `Попробуйте заново:\n` +
+            `1. Выберите курс\n` +
+            `2. Нажмите "📝 Сдать отчет"\n` +
+            `3. Отправьте файл`
+          );
+          
+          // Показываем главное меню
+          await this.showStatefulDashboard(chatId, student.id);
+          return;
+        }
+      }
+
       // Принимаем файлы только в состоянии ожидания отправки
       if (!studentState || studentState.state !== StudentState.AWAITING_SUBMISSION) {
         await this.sendMessage(chatId, 
-          '❌ Сначала выберите урок и нажмите "📝 Сдать отчет"'
+          `❌ Сначала выберите урок и нажмите "📝 Сдать отчет"\n\n` +
+          `🔍 Отладка: Ваше состояние - ${studentState ? studentState.state : 'не найдено'}`
         );
         
         // Возвращаем в главное меню
