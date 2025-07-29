@@ -168,10 +168,13 @@ export class TelegramBot {
         return;
       }
 
+      // Сортируем курсы по ID
+      studentCourses.sort((a, b) => parseInt(a.course.id) - parseInt(b.course.id));
+
       let message = `👋 Добро пожаловать, ${student.name}!\n\n`;
       message += '📚 **Ваши курсы:**\n\n';
 
-      const buttons: InlineKeyboardButton[] = [];
+      const buttons: InlineKeyboardButton[][] = [];
 
       for (const studentCourse of studentCourses) {
         const course = studentCourse.course;
@@ -192,14 +195,15 @@ export class TelegramBot {
         message += `• **${course.title}**\n`;
         message += `  Прогресс: ${completedLessons}/${totalLessons} (${progress}%)\n\n`;
 
-        buttons.push({
+        // Каждая кнопка в отдельной строке
+        buttons.push([{
           text: `📖 ${course.title} (${progress}%)`,
           callback_data: `course_${course.id}`
-        });
+        }]);
       }
 
       const keyboard: InlineKeyboard = {
-        inline_keyboard: [buttons]
+        inline_keyboard: buttons
       };
 
       await this.sendMessageWithKeyboard(chatId, message, keyboard);
@@ -345,29 +349,42 @@ export class TelegramBot {
         return;
       }
 
-      // Находим текущий урок студента
-      const courses = await this.db.getAllCourses();
-      const studentCourse = courses.find(c => c.id === student.course_id);
+      // Получаем все курсы студента
+      const studentCourses = await this.db.getStudentCourses(student.id);
       
-      if (!studentCourse) {
-        await this.sendMessage(chatId, '❌ Курс не найден');
+      if (studentCourses.length === 0) {
+        await this.sendMessage(chatId, '❌ У вас нет назначенных курсов');
         return;
       }
 
-      const lessons = await this.db.getLessonsByCourse(studentCourse.id);
-      lessons.sort((a, b) => a.order_num - b.order_num);
-
+      // Находим первый курс с незавершенными уроками
+      let currentLesson = null;
+      let currentCourse = null;
       const reports = await this.db.getAllReports();
       const studentReports = reports.filter(r => r.student_id === student.id);
-      
-      let currentLesson = lessons[0];
-      
-      for (const lesson of lessons) {
-        const report = studentReports.find(r => r.lesson_id === lesson.id);
-        if (!report || report.status !== 'approved') {
-          currentLesson = lesson;
-          break;
+
+      // Проходим по всем курсам студента и ищем первый незавершенный урок
+      for (const studentCourse of studentCourses) {
+        if (!studentCourse.is_active) continue;
+
+        const lessons = await this.db.getLessonsByCourse(studentCourse.course_id);
+        lessons.sort((a, b) => a.order_num - b.order_num);
+
+        for (const lesson of lessons) {
+          const report = studentReports.find(r => r.lesson_id === lesson.id);
+          if (!report || report.status !== 'approved') {
+            currentLesson = lesson;
+            currentCourse = studentCourse.course;
+            break;
+          }
         }
+
+        if (currentLesson) break;
+      }
+
+      if (!currentLesson || !currentCourse) {
+        await this.sendMessage(chatId, '❌ Нет доступных уроков для сдачи отчета');
+        return;
       }
 
       // Создаем или обновляем отчет
@@ -388,12 +405,17 @@ export class TelegramBot {
         return;
       }
 
+      if (!report) {
+        await this.sendMessage(chatId, '❌ Ошибка при создании отчета');
+        return;
+      }
+
       // Отправляем файл и информацию админу
       const adminMessage = 
         `📝 **Новый отчет**\n\n` +
         `**Студент:** ${student.name}\n` +
         `**Город:** ${student.city}\n` +
-        `**Курс:** ${studentCourse.title}\n` +
+        `**Курс:** ${currentCourse.title}\n` +
         `**Урок ${currentLesson.order_num}:** ${currentLesson.title}\n\n` +
         `**Задание:**\n${currentLesson.content}\n\n` +
         `**ID отчета:** ${report.id}`;

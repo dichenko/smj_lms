@@ -17,9 +17,5 @@
       "database_name": "smj-lms-db",
               "database_id": "60e23860-4e8e-4ec2-9a3c-218380856dc7"
     }
-  ],
-  "env": {
-    "TELEGRAM_BOT_TOKEN": "",
-    "TELEGRAM_ADMIN_CHAT_ID": ""
-  }
+  ]
 }

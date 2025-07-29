@@ -525,9 +525,31 @@ export class DatabaseService {
       JOIN courses c ON sc.course_id = c.id
       WHERE sc.student_id = ? AND sc.is_active = 1
       ORDER BY sc.enrolled_at DESC
-    `).bind(studentId).all<StudentCourseWithDetails>();
+    `).bind(studentId).all();
     
-    return result.results;
+    // Преобразуем плоский результат в структурированный объект
+    return result.results.map((row: any) => ({
+      id: row.id,
+      student_id: row.student_id,
+      course_id: row.course_id,
+      enrolled_at: row.enrolled_at,
+      is_active: row.is_active,
+      student: {
+        id: row.student_id_full,
+        tgid: row.student_tgid,
+        name: row.student_name,
+        city: row.student_city,
+        created_at: row.student_created_at,
+        updated_at: row.student_updated_at
+      },
+      course: {
+        id: row.course_id_full,
+        title: row.course_title,
+        description: row.course_description,
+        created_at: row.course_created_at,
+        updated_at: row.course_updated_at
+      }
+    }));
   }
 
   async enrollStudentInCourse(data: CreateStudentCourse): Promise<StudentCourse> {
