@@ -469,11 +469,18 @@
             padding: 1rem;
             border-bottom: 1px solid #dee2e6;
             vertical-align: top;
+            word-wrap: break-word;
+        }
+
+        .progress-table td.student-column {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .student-column {
-            width: 200px;
-            min-width: 200px;
+            width: 300px;
+            min-width: 300px;
         }
 
         .courses-column {
@@ -602,6 +609,9 @@
             font-weight: 600;
             color: #2c3e50;
             font-size: 1.1rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .course-title {
