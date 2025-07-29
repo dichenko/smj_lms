@@ -450,6 +450,298 @@
             color: #6c757d;
             border: 1px solid #ced4da;
         }
+
+        /* Стили для модального окна добавления студента */
+        .modal-content {
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-content h3 {
+            color: #2c3e50;
+            margin-bottom: 1.5rem;
+            font-size: 1.4rem;
+            font-weight: 600;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #34495e;
+            font-size: 0.95rem;
+        }
+
+        .form-group input[type="text"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .form-group input[type="text"]:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        /* Стили для чекбоксов курсов */
+        #courseCheckboxes {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            padding: 1rem;
+            background: #f8f9fa;
+        }
+
+        .course-checkbox-item {
+            margin-bottom: 0.75rem;
+        }
+
+        .course-checkbox-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .course-checkbox-label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .course-checkbox-label:hover {
+            background: rgba(52, 152, 219, 0.05);
+        }
+
+        .course-checkbox {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #bdc3c7;
+            border-radius: 4px;
+            margin-right: 0.75rem;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .course-checkbox:checked {
+            background: #3498db;
+            border-color: #3498db;
+        }
+
+        .course-checkbox:checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .course-checkbox:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        .course-checkbox-text {
+            font-size: 1rem;
+            color: #2c3e50;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        /* Стили для кнопок в модальном окне */
+        .modal-content .form-group:last-child {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e1e8ed;
+        }
+
+        .modal-content .btn {
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+
+        .modal-content .btn:not(.btn-secondary) {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            border: none;
+            color: white;
+        }
+
+        .modal-content .btn:not(.btn-secondary):hover {
+            background: linear-gradient(135deg, #2980b9, #1f5f8b);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+        }
+
+        .modal-content .btn-secondary {
+            background: #95a5a6;
+            border: none;
+            color: white;
+        }
+
+        .modal-content .btn-secondary:hover {
+            background: #7f8c8d;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(149, 165, 166, 0.3);
+        }
+
+        /* Анимация для модального окна */
+        .modal {
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { 
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Стили для скроллбара в чекбоксах */
+        #courseCheckboxes::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #courseCheckboxes::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        #courseCheckboxes::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        #courseCheckboxes::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        /* Стили для модального окна управления курсами */
+        .current-courses-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            padding: 1rem;
+            background: #f8f9fa;
+        }
+
+        .current-course-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            background: white;
+            border: 1px solid #e1e8ed;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .current-course-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .current-course-item:hover {
+            border-color: #3498db;
+            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.1);
+        }
+
+        .course-name {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1rem;
+        }
+
+        .no-courses {
+            text-align: center;
+            color: #7f8c8d;
+            font-style: italic;
+            padding: 1rem;
+            margin: 0;
+        }
+
+        .course-select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .course-select:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .btn-icon {
+            margin-right: 0.5rem;
+            font-weight: bold;
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            border-radius: 6px;
+        }
+
+        .btn-sm.btn-danger {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            border: none;
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .btn-sm.btn-danger:hover {
+            background: linear-gradient(135deg, #c0392b, #a93226);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+        }
     </style>
 </head>
 <body>
@@ -860,7 +1152,8 @@
                 
                 if (!response.ok) throw new Error('Failed to load students');
                 
-                students = await response.json();
+                const data = await response.json();
+                students = data.students || [];
                 renderStudentsTable();
                 updateCityFilter();
             } catch (error) {
@@ -875,6 +1168,11 @@
             const tbody = document.getElementById('studentsTableBody');
             const cityFilter = document.getElementById('cityFilter').value;
             const searchFilter = document.getElementById('searchFilter').value.toLowerCase();
+            
+            // Убеждаемся, что students является массивом
+            if (!Array.isArray(students)) {
+                students = [];
+            }
             
             let filteredStudents = students;
             
@@ -900,7 +1198,7 @@
                     <td>${student.tgid}</td>
                     <td>
                         <div class="courses-list">
-                            ${student.courses.map(course => 
+                            ${(student.courses || []).map(course => 
                                 `<span class="course-badge">${course.title}</span>`
                             ).join('')}
                         </div>
@@ -917,6 +1215,10 @@
 
         // Обновление фильтра городов
         function updateCityFilter() {
+            // Убеждаемся, что students является массивом
+            if (!Array.isArray(students)) {
+                students = [];
+            }
             const cities = [...new Set(students.map(s => s.city))].sort();
             const select = document.getElementById('cityFilter');
             
@@ -938,7 +1240,8 @@
                 
                 if (!response.ok) throw new Error('Failed to load courses');
                 
-                courses = await response.json();
+                const data = await response.json();
+                courses = data.courses || [];
                 renderCoursesTable();
             } catch (error) {
                 console.error('Error loading courses:', error);
@@ -981,7 +1284,8 @@
                 
                 if (!response.ok) throw new Error('Failed to load reports');
                 
-                reports = await response.json();
+                const data = await response.json();
+                reports = data.reports || [];
                 renderReportsTable();
                 updateReportCityFilter();
             } catch (error) {
@@ -1066,7 +1370,8 @@
                 
                 if (!response.ok) throw new Error('Failed to load logs');
                 
-                logs = await response.json();
+                const data = await response.json();
+                logs = data.logs || [];
                 renderLogsTable();
             } catch (error) {
                 console.error('Error loading logs:', error);
@@ -1096,16 +1401,23 @@
         // Показать модальное окно добавления студента
         async function showAddStudentModal() {
             // Загружаем курсы для чекбоксов
-            if (courses.length === 0) {
+            if (!Array.isArray(courses) || courses.length === 0) {
                 await loadCourses();
+            }
+            
+            // Убеждаемся, что courses является массивом
+            if (!Array.isArray(courses)) {
+                courses = [];
             }
             
             const checkboxesContainer = document.getElementById('courseCheckboxes');
             checkboxesContainer.innerHTML = courses.map(course => `
-                <label style="display: block; margin-bottom: 0.5rem;">
-                    <input type="checkbox" value="${course.id}" style="margin-right: 0.5rem;">
-                    ${course.title}
-                </label>
+                <div class="course-checkbox-item">
+                    <label class="course-checkbox-label">
+                        <input type="checkbox" value="${course.id}" class="course-checkbox">
+                        <span class="course-checkbox-text">${course.title}</span>
+                    </label>
+                </div>
             `).join('');
             
             document.getElementById('addStudentModal').style.display = 'block';
@@ -1153,33 +1465,48 @@
 
         // Управление курсами студента
         async function manageStudentCourses(studentId) {
+            // Убеждаемся, что students является массивом
+            if (!Array.isArray(students)) {
+                students = [];
+            }
+            
             const student = students.find(s => s.id === studentId);
             if (!student) return;
+            
+            // Убеждаемся, что courses является массивом
+            if (!Array.isArray(courses)) {
+                courses = [];
+            }
             
             const content = document.getElementById('manageCoursesContent');
             content.innerHTML = `
                 <h4>${student.name} - Управление курсами</h4>
                 <div class="form-group">
                     <label>Текущие курсы:</label>
-                    <div id="currentCourses">
-                        ${student.courses.map(course => `
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; border: 1px solid #ddd; margin-bottom: 0.5rem; border-radius: 4px;">
-                                <span>${course.title}</span>
-                                <button class="btn btn-sm btn-danger" onclick="unenrollStudent('${studentId}', '${course.id}')">Отчислить</button>
+                    <div id="currentCourses" class="current-courses-list">
+                        ${(student.courses || []).map(course => `
+                            <div class="current-course-item">
+                                <span class="course-name">${course.title}</span>
+                                <button class="btn btn-sm btn-danger" onclick="unenrollStudent('${studentId}', '${course.id}')">
+                                    <span class="btn-icon">✕</span> Отчислить
+                                </button>
                             </div>
                         `).join('')}
+                        ${(student.courses || []).length === 0 ? '<p class="no-courses">Студент не зачислен ни на один курс</p>' : ''}
                     </div>
                 </div>
                 <div class="form-group">
                     <label>Добавить на курс:</label>
-                    <select id="enrollCourseSelect">
-                        <option value="">Выберите курс</option>
-                        ${courses.filter(course => !student.courses.some(sc => sc.id === course.id))
+                    <select id="enrollCourseSelect" class="course-select">
+                        <option value="">Выберите курс для зачисления</option>
+                        ${courses.filter(course => !(student.courses || []).some(sc => sc.id === course.id))
                             .map(course => `<option value="${course.id}">${course.title}</option>`).join('')}
                     </select>
                 </div>
                 <div class="form-group">
-                    <button class="btn" onclick="enrollStudent('${studentId}')">Зачислить</button>
+                    <button class="btn" onclick="enrollStudent('${studentId}')">
+                        <span class="btn-icon">+</span> Зачислить
+                    </button>
                     <button class="btn btn-secondary" onclick="closeModal('manageCoursesModal')">Закрыть</button>
                 </div>
             `;
