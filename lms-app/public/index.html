@@ -261,7 +261,9 @@
                 
                 if (response.ok && data.success) {
                     showSuccess('Вход выполнен успешно!');
-                    setTimeout(showDashboard, 1000);
+                    setTimeout(() => {
+                        window.location.href = '/admin/dashboard.html';
+                    }, 1000);
                 } else {
                     showError(data.error || 'Ошибка входа');
                 }

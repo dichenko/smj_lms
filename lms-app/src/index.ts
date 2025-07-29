@@ -138,7 +138,7 @@ const requireAuth = async (c: any, next: any) => {
 };
 
 // Students routes
-api.get('/students', async (c) => {
+api.get('/students', requireAuth, async (c) => {
   try {
     const db = c.get('db');
     const students = await db.getAllStudents();
@@ -204,11 +204,23 @@ api.delete('/students/:id', async (c) => {
 });
 
 // Courses routes
-api.get('/courses', async (c) => {
+api.get('/courses', requireAuth, async (c) => {
   try {
     const db = c.get('db');
     const courses = await db.getAllCourses();
-    return c.json({ courses });
+    
+    // Добавляем уроки к каждому курсу
+    const coursesWithLessons = await Promise.all(
+      courses.map(async (course) => {
+        const lessons = await db.getLessonsByCourse(course.id);
+        return {
+          ...course,
+          lessons: lessons.sort((a, b) => a.order_num - b.order_num)
+        };
+      })
+    );
+    
+    return c.json({ courses: coursesWithLessons });
   } catch (error: any) {
     const db = c.get('db');
     await db.logError({
@@ -336,7 +348,7 @@ api.delete('/lessons/:id', async (c) => {
 });
 
 // Reports routes
-api.get('/reports', async (c) => {
+api.get('/reports', requireAuth, async (c) => {
   try {
     const db = c.get('db');
     const reports = await db.getAllReports();
