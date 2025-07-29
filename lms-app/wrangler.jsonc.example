@@ -9,13 +9,13 @@
   },
   "vars": {
     "ENVIRONMENT": "development",
-    "ADMIN_PASSWORD": "admin123"
+    "ADMIN_PASSWORD": "your_admin_password_here"
   },
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "smj-lms-db",
-              "database_id": "60e23860-4e8e-4ec2-9a3c-218380856dc7"
+              "database_id": "your_database_id_here"
     }
   ]
-}
+} 
