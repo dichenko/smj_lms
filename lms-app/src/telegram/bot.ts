@@ -294,6 +294,16 @@ export class TelegramBot {
     const data = callbackQuery.data;
 
     try {
+      // Сначала проверяем admin действия
+      if (data.startsWith('admin_approve_')) {
+        await this.handleAdminApprove(callbackQuery);
+        return;
+      } else if (data.startsWith('admin_reject_')) {
+        await this.handleAdminReject(callbackQuery);
+        return;
+      }
+
+      // Затем проверяем студентов для остальных действий
       const student = await this.db.getStudentByTgid(tgid);
       if (!student) {
         await this.answerCallbackQuery(callbackQuery.id, 'Вы не зарегистрированы в системе');
@@ -308,10 +318,6 @@ export class TelegramBot {
       } else if (data.startsWith('submit_')) {
         const lessonId = data.replace('submit_', '');
         await this.handleSubmitRequest(chatId, student.id, lessonId);
-      } else if (data.startsWith('admin_approve_')) {
-        await this.handleAdminApprove(callbackQuery);
-      } else if (data.startsWith('admin_reject_')) {
-        await this.handleAdminReject(callbackQuery);
       }
 
       await this.answerCallbackQuery(callbackQuery.id);
