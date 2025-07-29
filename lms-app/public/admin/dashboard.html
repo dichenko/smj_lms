@@ -464,9 +464,15 @@
 
         .course-block {
             border: 1px solid #e9ecef;
-            border-radius: 6px;
-            padding: 0.75rem;
-            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            background: white;
+            margin-bottom: 1rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .course-block:last-child {
+            margin-bottom: 0;
         }
 
         .course-title {
@@ -572,7 +578,20 @@
         .course-row {
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: 1.5rem;
+        }
+
+        .course-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 1px solid #dee2e6;
+            min-width: 200px;
+            flex-shrink: 0;
         }
 
         .lessons-row {
@@ -580,6 +599,10 @@
             gap: 0.25rem;
             flex-wrap: wrap;
             align-items: center;
+            padding: 0.5rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
         }
 
         .lesson-number {
