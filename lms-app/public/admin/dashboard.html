@@ -451,6 +451,52 @@
             border: 1px solid #ced4da;
         }
 
+        /* Стили для процентов прогресса */
+        .overall-progress {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+            display: inline-block;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .course-progress {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            padding: 0.2rem 0.4rem;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+            display: inline-block;
+            min-width: 35px;
+            text-align: center;
+        }
+
+        .student-name {
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.1rem;
+        }
+
+        .course-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 1px solid #dee2e6;
+        }
+
         /* Стили для модального окна добавления студента */
         .modal-content {
             max-width: 500px;
@@ -1090,19 +1136,29 @@
                 return;
             }
             
-            tbody.innerHTML = filteredData.map(student => `
+            tbody.innerHTML = filteredData.map(student => {
+                const overallProgress = calculateOverallProgress(student);
+                return `
                 <tr>
                     <td class="student-column">
                         <div class="student-info">
-                            <div class="student-name">${student.name}</div>
+                            <div class="student-name">
+                                ${student.name}
+                                <span class="overall-progress">${overallProgress}%</span>
+                            </div>
                             <div class="student-city">${student.city}</div>
                         </div>
                     </td>
                     <td class="courses-column">
                         <div class="courses-progress">
-                            ${student.courses.map(course => `
+                            ${student.courses.map(course => {
+                                const courseProgress = calculateCourseProgress(course);
+                                return `
                                 <div class="course-block">
-                                    <div class="course-title">${course.title}</div>
+                                    <div class="course-title">
+                                        ${course.title}
+                                        <span class="course-progress">${courseProgress}%</span>
+                                    </div>
                                     <div class="lessons-grid">
                                         ${course.lessons.map(lesson => `
                                             <div class="lesson-status ${lesson.status}" title="${lesson.title} - ${getLessonStatusText(lesson.status)}">
@@ -1111,11 +1167,11 @@
                                         `).join('')}
                                     </div>
                                 </div>
-                            `).join('')}
+                            `}).join('')}
                         </div>
                     </td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
 
         // Обновление фильтра городов для прогресса
@@ -1141,6 +1197,31 @@
                 case 'not_started': return 'Не начат';
                 default: return status;
             }
+        }
+
+        // Расчет процента прохождения курса
+        function calculateCourseProgress(course) {
+            if (!course.lessons || course.lessons.length === 0) return 0;
+            
+            const approvedLessons = course.lessons.filter(lesson => lesson.status === 'approved').length;
+            return Math.round((approvedLessons / course.lessons.length) * 100);
+        }
+
+        // Расчет общего процента прохождения всех курсов студента
+        function calculateOverallProgress(student) {
+            if (!student.courses || student.courses.length === 0) return 0;
+            
+            let totalLessons = 0;
+            let totalApprovedLessons = 0;
+            
+            student.courses.forEach(course => {
+                if (course.lessons) {
+                    totalLessons += course.lessons.length;
+                    totalApprovedLessons += course.lessons.filter(lesson => lesson.status === 'approved').length;
+                }
+            });
+            
+            return totalLessons > 0 ? Math.round((totalApprovedLessons / totalLessons) * 100) : 0;
         }
 
         // Загрузка студентов
