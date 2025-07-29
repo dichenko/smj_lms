@@ -21,9 +21,16 @@ export interface Student {
   tgid: string; // Telegram User ID
   name: string;
   city: string;
-  course_id: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface StudentCourse {
+  id: string;
+  student_id: string;
+  course_id: string;
+  enrolled_at: string;
+  is_active: boolean;
 }
 
 export interface Lesson {
@@ -75,6 +82,10 @@ export interface CreateStudent {
   tgid: string;
   name: string;
   city: string;
+}
+
+export interface CreateStudentCourse {
+  student_id: string;
   course_id: string;
 }
 
@@ -111,7 +122,10 @@ export interface UpdateCourse {
 export interface UpdateStudent {
   name?: string;
   city?: string;
-  course_id?: string;
+}
+
+export interface UpdateStudentCourse {
+  is_active?: boolean;
 }
 
 export interface UpdateLesson {
@@ -121,7 +135,12 @@ export interface UpdateLesson {
 }
 
 // Response types with relationships
-export interface StudentWithCourse extends Student {
+export interface StudentWithCourses extends Student {
+  courses: Course[];
+}
+
+export interface StudentCourseWithDetails extends StudentCourse {
+  student: Student;
   course: Course;
 }
 

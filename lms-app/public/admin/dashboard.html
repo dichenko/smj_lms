@@ -77,6 +77,7 @@
             text-decoration: none;
             border-bottom: 2px solid transparent;
             transition: all 0.2s;
+            cursor: pointer;
         }
 
         .nav-item.active {
@@ -107,47 +108,11 @@
             color: #333;
         }
 
-        .filters {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            margin-bottom: 2rem;
-        }
-
-        .filter-row {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .filter-group label {
-            font-weight: 500;
-            color: #555;
-            font-size: 0.9rem;
-        }
-
-        .filter-group select,
-        .filter-group input {
-            padding: 0.5rem;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            min-width: 150px;
-        }
-
         .btn {
             background: #667eea;
             color: white;
             border: none;
-            padding: 0.5rem 1rem;
+            padding: 0.75rem 1.5rem;
             border-radius: 6px;
             cursor: pointer;
             font-size: 0.9rem;
@@ -166,50 +131,101 @@
             background: #5a6268;
         }
 
-        .table-container {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            overflow: hidden;
+        .btn-success {
+            background: #28a745;
         }
 
-        .table {
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .filters {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-group label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #666;
+        }
+
+        .filter-group select,
+        .filter-group input {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
             width: 100%;
             border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
-        .table th {
-            background: #f8f9fa;
+        th, td {
             padding: 1rem;
             text-align: left;
-            font-weight: 600;
-            color: #555;
             border-bottom: 1px solid #e1e5e9;
-            position: sticky;
-            top: 0;
-            z-index: 10;
         }
 
-        .table td {
-            padding: 1rem;
-            border-bottom: 1px solid #f1f3f4;
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
         }
 
-        .table tr:hover {
+        tr:hover {
             background: #f8f9fa;
         }
 
         .status {
-            display: inline-block;
             padding: 0.25rem 0.5rem;
             border-radius: 4px;
             font-size: 0.8rem;
             font-weight: 500;
         }
 
-        .status.approved {
+        .status.passed {
             background: #d4edda;
             color: #155724;
+        }
+
+        .status.not-passed {
+            background: #f8d7da;
+            color: #721c24;
         }
 
         .status.pending {
@@ -217,14 +233,77 @@
             color: #856404;
         }
 
-        .status.rejected {
-            background: #f8d7da;
-            color: #721c24;
+        .courses-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
         }
 
-        .status.not-submitted {
-            background: #e2e3e5;
-            color: #6c757d;
+        .course-badge {
+            background: #e9ecef;
+            color: #495057;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 2rem;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+        }
+
+        .close {
+            position: absolute;
+            right: 1rem;
+            top: 1rem;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .close:hover {
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
         }
 
         .loading {
@@ -233,487 +312,724 @@
             color: #666;
         }
 
-        .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 1rem;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
         .error {
             background: #f8d7da;
             color: #721c24;
             padding: 1rem;
-            border-radius: 6px;
+            border-radius: 4px;
             margin-bottom: 1rem;
-            border: 1px solid #f5c6cb;
         }
 
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
         }
 
-        .stat-card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            text-align: center;
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
         }
 
-        .stat-number {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #667eea;
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-label {
-            color: #666;
-            font-size: 0.9rem;
-        }
-
-        @media (max-width: 768px) {
-            .header-content,
-            .nav-content,
-            .main {
-                padding: 0 1rem;
-            }
-
-            .filter-row {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .table-container {
-                overflow-x: auto;
-            }
-
-            .table th,
-            .table td {
-                padding: 0.5rem;
-                font-size: 0.9rem;
-            }
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.8rem;
         }
     </style>
 </head>
 <body>
     <div class="header">
         <div class="header-content">
-            <h1>🎓 SMJ LMS - Админ-панель</h1>
+            <h1>SMJ LMS - Админ-панель</h1>
             <div class="user-info">
                 <span>Администратор</span>
-                <a href="#" class="logout-btn" onclick="logout()">🚪 Выйти</a>
+                <a href="#" class="logout-btn" onclick="logout()">Выйти</a>
             </div>
         </div>
     </div>
 
     <div class="nav">
         <div class="nav-content">
-            <a href="#" class="nav-item active" onclick="showPage('dashboard')">📊 Главная</a>
-            <a href="#" class="nav-item" onclick="showPage('students')">👥 Студенты</a>
-            <a href="#" class="nav-item" onclick="showPage('courses')">📚 Курсы</a>
-            <a href="#" class="nav-item" onclick="showPage('reports')">📝 Отчеты</a>
-            <a href="#" class="nav-item" onclick="showPage('logs')">📋 Логи</a>
+            <div class="nav-item active" onclick="showPage('students')">Студенты</div>
+            <div class="nav-item" onclick="showPage('courses')">Курсы</div>
+            <div class="nav-item" onclick="showPage('reports')">Отчеты</div>
+            <div class="nav-item" onclick="showPage('logs')">Логи</div>
         </div>
     </div>
 
     <div class="main">
-        <!-- Главная страница с отчетом -->
-        <div id="dashboard-page">
+        <!-- Страница студентов -->
+        <div id="students-page" class="page">
             <div class="page-header">
-                <h2 class="page-title">📊 Отчет по студентам</h2>
-                <button class="btn" onclick="refreshData()">🔄 Обновить</button>
+                <h2 class="page-title">Управление студентами</h2>
+                <button class="btn" onclick="showAddStudentModal()">Добавить студента</button>
             </div>
 
-            <!-- Статистика -->
-            <div class="stats" id="stats">
-                <div class="stat-card">
-                    <div class="stat-number" id="total-students">-</div>
-                    <div class="stat-label">Всего студентов</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="total-courses">-</div>
-                    <div class="stat-label">Курсов</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="pending-reports">-</div>
-                    <div class="stat-label">Отчетов на проверке</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="completed-lessons">-</div>
-                    <div class="stat-label">Завершенных уроков</div>
-                </div>
-            </div>
-
-            <!-- Фильтры -->
             <div class="filters">
-                <div class="filter-row">
-                    <div class="filter-group">
-                        <label>Город:</label>
-                        <select id="city-filter" onchange="applyFilters()">
-                            <option value="">Все города</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label>Курс:</label>
-                        <select id="course-filter" onchange="applyFilters()">
-                            <option value="">Все курсы</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label>Статус:</label>
-                        <select id="status-filter" onchange="applyFilters()">
-                            <option value="">Все статусы</option>
-                            <option value="approved">Одобрено</option>
-                            <option value="pending">На проверке</option>
-                            <option value="rejected">Отклонено</option>
-                            <option value="not-submitted">Не сдано</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label>&nbsp;</label>
-                        <button class="btn btn-secondary" onclick="clearFilters()">Очистить фильтры</button>
-                    </div>
+                <div class="filter-group">
+                    <label>Фильтр по городу:</label>
+                    <select id="cityFilter" onchange="filterStudents()">
+                        <option value="">Все города</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Поиск:</label>
+                    <input type="text" id="searchFilter" placeholder="Имя студента..." onkeyup="filterStudents()">
                 </div>
             </div>
 
-            <!-- Таблица -->
             <div class="table-container">
-                <div id="loading" class="loading">
-                    <div class="spinner"></div>
-                    <p>Загружаем данные...</p>
-                </div>
-                <div id="error" class="error" style="display: none;"></div>
-                <table class="table" id="students-table" style="display: none;">
+                <table id="studentsTable">
                     <thead>
                         <tr>
+                            <th>Имя</th>
                             <th>Город</th>
-                            <th>Студент</th>
-                            <th>Курс</th>
-                            <th id="lessons-header">Уроки</th>
-                            <th>Прогресс</th>
+                            <th>Telegram ID</th>
+                            <th>Курсы</th>
+                            <th>Действия</th>
                         </tr>
                     </thead>
-                    <tbody id="students-tbody">
+                    <tbody id="studentsTableBody">
+                        <tr>
+                            <td colspan="5" class="loading">Загрузка...</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
         </div>
 
-        <!-- Другие страницы (заглушки) -->
-        <div id="students-page" style="display: none;">
-            <h2>👥 Управление студентами</h2>
-            <p>Страница в разработке...</p>
+        <!-- Страница курсов -->
+        <div id="courses-page" class="page" style="display: none;">
+            <div class="page-header">
+                <h2 class="page-title">Управление курсами</h2>
+                <button class="btn" onclick="showAddCourseModal()">Добавить курс</button>
+            </div>
+
+            <div class="table-container">
+                <table id="coursesTable">
+                    <thead>
+                        <tr>
+                            <th>Название</th>
+                            <th>Описание</th>
+                            <th>Уроков</th>
+                            <th>Студентов</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="coursesTableBody">
+                        <tr>
+                            <td colspan="5" class="loading">Загрузка...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
-        <div id="courses-page" style="display: none;">
-            <h2>📚 Управление курсами</h2>
-            <p>Страница в разработке...</p>
+        <!-- Страница отчетов -->
+        <div id="reports-page" class="page" style="display: none;">
+            <div class="page-header">
+                <h2 class="page-title">Отчеты студентов</h2>
+            </div>
+
+            <div class="filters">
+                <div class="filter-group">
+                    <label>Статус:</label>
+                    <select id="statusFilter" onchange="filterReports()">
+                        <option value="">Все статусы</option>
+                        <option value="pending">На проверке</option>
+                        <option value="approved">Одобрено</option>
+                        <option value="rejected">Отклонено</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Город:</label>
+                    <select id="reportCityFilter" onchange="filterReports()">
+                        <option value="">Все города</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table id="reportsTable">
+                    <thead>
+                        <tr>
+                            <th>Студент</th>
+                            <th>Город</th>
+                            <th>Курс</th>
+                            <th>Урок</th>
+                            <th>Статус</th>
+                            <th>Дата</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportsTableBody">
+                        <tr>
+                            <td colspan="7" class="loading">Загрузка...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
-        <div id="reports-page" style="display: none;">
-            <h2>📝 Рецензирование отчетов</h2>
-            <p>Страница в разработке...</p>
-        </div>
+        <!-- Страница логов -->
+        <div id="logs-page" class="page" style="display: none;">
+            <div class="page-header">
+                <h2 class="page-title">Логи системы</h2>
+            </div>
 
-        <div id="logs-page" style="display: none;">
-            <h2>📋 Логи системы</h2>
-            <p>Страница в разработке...</p>
+            <div class="table-container">
+                <table id="logsTable">
+                    <thead>
+                        <tr>
+                            <th>Источник</th>
+                            <th>Сообщение</th>
+                            <th>Дата</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsTableBody">
+                        <tr>
+                            <td colspan="3" class="loading">Загрузка...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно добавления студента -->
+    <div id="addStudentModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('addStudentModal')">&times;</span>
+            <h3>Добавить студента</h3>
+            <form id="addStudentForm">
+                <div class="form-group">
+                    <label>Telegram ID:</label>
+                    <input type="text" id="studentTgid" required>
+                </div>
+                <div class="form-group">
+                    <label>Имя:</label>
+                    <input type="text" id="studentName" required>
+                </div>
+                <div class="form-group">
+                    <label>Город:</label>
+                    <input type="text" id="studentCity" required>
+                </div>
+                <div class="form-group">
+                    <label>Курсы:</label>
+                    <div id="courseCheckboxes">
+                        <!-- Курсы будут загружены динамически -->
+                    </div>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn">Добавить</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addStudentModal')">Отмена</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модальное окно управления курсами студента -->
+    <div id="manageCoursesModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('manageCoursesModal')">&times;</span>
+            <h3>Управление курсами студента</h3>
+            <div id="manageCoursesContent">
+                <!-- Содержимое будет загружено динамически -->
+            </div>
         </div>
     </div>
 
     <script>
-        const API_BASE = '/api';
-        let studentsData = [];
-        let coursesData = [];
-        let reportsData = [];
+        let currentPage = 'students';
+        let students = [];
+        let courses = [];
+        let reports = [];
+        let logs = [];
 
-        // Проверяем аутентификацию при загрузке
-        document.addEventListener('DOMContentLoaded', async () => {
-            const isAuthenticated = await checkAuth();
-            if (!isAuthenticated) {
-                window.location.href = '/';
-                return;
-            }
-            
-            await loadData();
-        });
-
+        // Проверка авторизации
         async function checkAuth() {
             try {
-                const response = await fetch(`${API_BASE}/auth/check`, {
+                const response = await fetch('/api/auth/check', {
                     credentials: 'include'
                 });
-                return response.ok;
+                
+                if (!response.ok) {
+                    window.location.href = '/';
+                    return;
+                }
             } catch (error) {
-                return false;
+                console.error('Auth check failed:', error);
+                window.location.href = '/';
             }
         }
 
-        async function loadData() {
-            showLoading(true);
-            hideError();
-
-            try {
-                // Загружаем данные параллельно
-                const [studentsResponse, coursesResponse, reportsResponse] = await Promise.all([
-                    fetch(`${API_BASE}/students`, { credentials: 'include' }),
-                    fetch(`${API_BASE}/courses`, { credentials: 'include' }),
-                    fetch(`${API_BASE}/reports`, { credentials: 'include' })
-                ]);
-
-                if (!studentsResponse.ok || !coursesResponse.ok || !reportsResponse.ok) {
-                    throw new Error('Ошибка загрузки данных');
-                }
-
-                studentsData = await studentsResponse.json();
-                coursesData = await coursesResponse.json();
-                reportsData = await reportsResponse.json();
-
-                await renderDashboard();
-                updateStats();
-                populateFilters();
-
-            } catch (error) {
-                showError('Ошибка загрузки данных: ' + error.message);
-            } finally {
-                hideLoading();
-            }
-        }
-
-        async function renderDashboard() {
-            const tbody = document.getElementById('students-tbody');
-            const lessonsHeader = document.getElementById('lessons-header');
-            
-            // Очищаем таблицу
-            tbody.innerHTML = '';
-            
-            // Получаем максимальное количество уроков
-            const maxLessons = Math.max(...coursesData.courses.map(course => 
-                course.lessons ? course.lessons.length : 0
-            ));
-
-            // Обновляем заголовок уроков
-            let lessonsHeaderHtml = '';
-            for (let i = 1; i <= maxLessons; i++) {
-                lessonsHeaderHtml += `<th>Урок ${i}</th>`;
-            }
-            lessonsHeader.innerHTML = lessonsHeaderHtml;
-
-            // Группируем студентов по городу
-            const studentsByCity = {};
-            studentsData.students.forEach(student => {
-                if (!studentsByCity[student.city]) {
-                    studentsByCity[student.city] = [];
-                }
-                studentsByCity[student.city].push(student);
-            });
-
-            // Рендерим студентов
-            Object.keys(studentsByCity).sort().forEach(city => {
-                studentsByCity[city].forEach(student => {
-                    const course = coursesData.courses.find(c => c.id === student.course_id);
-                    const studentReports = reportsData.reports.filter(r => r.student_id === student.id);
-                    
-                    const row = document.createElement('tr');
-                    
-                    // Город
-                    const cityCell = document.createElement('td');
-                    cityCell.textContent = city;
-                    row.appendChild(cityCell);
-                    
-                    // Студент
-                    const studentCell = document.createElement('td');
-                    studentCell.textContent = student.name;
-                    row.appendChild(studentCell);
-                    
-                    // Курс
-                    const courseCell = document.createElement('td');
-                    courseCell.textContent = course ? course.title : 'Неизвестно';
-                    row.appendChild(courseCell);
-                    
-                    // Уроки
-                    if (course && course.lessons) {
-                        course.lessons.forEach(lesson => {
-                            const lessonCell = document.createElement('td');
-                            const report = studentReports.find(r => r.lesson_id === lesson.id);
-                            
-                            if (report) {
-                                const statusClass = report.status;
-                                const statusText = getStatusText(report.status);
-                                lessonCell.innerHTML = `<span class="status ${statusClass}">${statusText}</span>`;
-                            } else {
-                                lessonCell.innerHTML = '<span class="status not-submitted">Не сдано</span>';
-                            }
-                            
-                            row.appendChild(lessonCell);
-                        });
-                    }
-                    
-                    // Прогресс
-                    const progressCell = document.createElement('td');
-                    const completed = studentReports.filter(r => r.status === 'approved').length;
-                    const total = course ? course.lessons.length : 0;
-                    const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
-                    progressCell.textContent = `${completed}/${total} (${percentage}%)`;
-                    row.appendChild(progressCell);
-                    
-                    tbody.appendChild(row);
-                });
-            });
-
-            document.getElementById('students-table').style.display = 'table';
-        }
-
-        function getStatusText(status) {
-            switch (status) {
-                case 'approved': return '✅ Сдал';
-                case 'pending': return '⏳ Проверка';
-                case 'rejected': return '❌ Отклонен';
-                default: return 'Неизвестно';
-            }
-        }
-
-        function updateStats() {
-            document.getElementById('total-students').textContent = studentsData.students.length;
-            document.getElementById('total-courses').textContent = coursesData.courses.length;
-            document.getElementById('pending-reports').textContent = reportsData.reports.filter(r => r.status === 'pending').length;
-            
-            const completedLessons = reportsData.reports.filter(r => r.status === 'approved').length;
-            document.getElementById('completed-lessons').textContent = completedLessons;
-        }
-
-        function populateFilters() {
-            // Города
-            const cities = [...new Set(studentsData.students.map(s => s.city))].sort();
-            const cityFilter = document.getElementById('city-filter');
-            cityFilter.innerHTML = '<option value="">Все города</option>';
-            cities.forEach(city => {
-                const option = document.createElement('option');
-                option.value = city;
-                option.textContent = city;
-                cityFilter.appendChild(option);
-            });
-
-            // Курсы
-            const courseFilter = document.getElementById('course-filter');
-            courseFilter.innerHTML = '<option value="">Все курсы</option>';
-            coursesData.courses.forEach(course => {
-                const option = document.createElement('option');
-                option.value = course.id;
-                option.textContent = course.title;
-                courseFilter.appendChild(option);
-            });
-        }
-
-        function applyFilters() {
-            const cityFilter = document.getElementById('city-filter').value;
-            const courseFilter = document.getElementById('course-filter').value;
-            const statusFilter = document.getElementById('status-filter').value;
-
-            const rows = document.querySelectorAll('#students-tbody tr');
-            
-            rows.forEach(row => {
-                const city = row.cells[0].textContent;
-                const courseId = getCourseIdFromRow(row);
-                const lessonStatuses = getLessonStatusesFromRow(row);
-                
-                let show = true;
-                
-                if (cityFilter && city !== cityFilter) show = false;
-                if (courseFilter && courseId !== courseFilter) show = false;
-                if (statusFilter && !lessonStatuses.includes(statusFilter)) show = false;
-                
-                row.style.display = show ? '' : 'none';
-            });
-        }
-
-        function getCourseIdFromRow(row) {
-            const studentName = row.cells[1].textContent;
-            const student = studentsData.students.find(s => s.name === studentName);
-            return student ? student.course_id : null;
-        }
-
-        function getLessonStatusesFromRow(row) {
-            const statuses = [];
-            for (let i = 3; i < row.cells.length - 1; i++) {
-                const statusElement = row.cells[i].querySelector('.status');
-                if (statusElement) {
-                    statuses.push(statusElement.className.split(' ')[1]);
-                }
-            }
-            return statuses;
-        }
-
-        function clearFilters() {
-            document.getElementById('city-filter').value = '';
-            document.getElementById('course-filter').value = '';
-            document.getElementById('status-filter').value = '';
-            applyFilters();
-        }
-
-        function refreshData() {
-            loadData();
-        }
-
-        function showPage(pageName) {
-            // Скрываем все страницы
-            document.querySelectorAll('[id$="-page"]').forEach(page => {
-                page.style.display = 'none';
-            });
-            
-            // Показываем нужную страницу
-            document.getElementById(pageName + '-page').style.display = 'block';
-            
-            // Обновляем навигацию
-            document.querySelectorAll('.nav-item').forEach(item => {
-                item.classList.remove('active');
-            });
-            event.target.classList.add('active');
-        }
-
+        // Выход
         async function logout() {
             try {
-                await fetch(`${API_BASE}/auth/logout`, {
+                await fetch('/api/auth/logout', {
                     method: 'POST',
                     credentials: 'include'
                 });
                 window.location.href = '/';
             } catch (error) {
-                console.error('Ошибка при выходе:', error);
-                window.location.href = '/';
+                console.error('Logout failed:', error);
             }
         }
 
-        function showLoading(show) {
-            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        // Переключение страниц
+        function showPage(page) {
+            // Скрываем все страницы
+            document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            
+            // Показываем выбранную страницу
+            document.getElementById(page + '-page').style.display = 'block';
+            event.target.classList.add('active');
+            
+            currentPage = page;
+            
+            // Загружаем данные для страницы
+            switch(page) {
+                case 'students':
+                    loadStudents();
+                    break;
+                case 'courses':
+                    loadCourses();
+                    break;
+                case 'reports':
+                    loadReports();
+                    break;
+                case 'logs':
+                    loadLogs();
+                    break;
+            }
         }
 
-        function hideLoading() {
-            showLoading(false);
+        // Загрузка студентов
+        async function loadStudents() {
+            try {
+                const response = await fetch('/api/students', {
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) throw new Error('Failed to load students');
+                
+                students = await response.json();
+                renderStudentsTable();
+                updateCityFilter();
+            } catch (error) {
+                console.error('Error loading students:', error);
+                document.getElementById('studentsTableBody').innerHTML = 
+                    '<tr><td colspan="5" class="error">Ошибка загрузки данных</td></tr>';
+            }
         }
 
-        function showError(message) {
-            const errorDiv = document.getElementById('error');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
+        // Отображение таблицы студентов
+        function renderStudentsTable() {
+            const tbody = document.getElementById('studentsTableBody');
+            const cityFilter = document.getElementById('cityFilter').value;
+            const searchFilter = document.getElementById('searchFilter').value.toLowerCase();
+            
+            let filteredStudents = students;
+            
+            if (cityFilter) {
+                filteredStudents = filteredStudents.filter(s => s.city === cityFilter);
+            }
+            
+            if (searchFilter) {
+                filteredStudents = filteredStudents.filter(s => 
+                    s.name.toLowerCase().includes(searchFilter)
+                );
+            }
+            
+            if (filteredStudents.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="loading">Студенты не найдены</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = filteredStudents.map(student => `
+                <tr>
+                    <td>${student.name}</td>
+                    <td>${student.city}</td>
+                    <td>${student.tgid}</td>
+                    <td>
+                        <div class="courses-list">
+                            ${student.courses.map(course => 
+                                `<span class="course-badge">${course.title}</span>`
+                            ).join('')}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-sm" onclick="manageStudentCourses('${student.id}')">Курсы</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteStudent('${student.id}')">Удалить</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
         }
 
-        function hideError() {
-            document.getElementById('error').style.display = 'none';
+        // Обновление фильтра городов
+        function updateCityFilter() {
+            const cities = [...new Set(students.map(s => s.city))].sort();
+            const select = document.getElementById('cityFilter');
+            
+            select.innerHTML = '<option value="">Все города</option>' +
+                cities.map(city => `<option value="${city}">${city}</option>`).join('');
         }
+
+        // Фильтрация студентов
+        function filterStudents() {
+            renderStudentsTable();
+        }
+
+        // Загрузка курсов
+        async function loadCourses() {
+            try {
+                const response = await fetch('/api/courses', {
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) throw new Error('Failed to load courses');
+                
+                courses = await response.json();
+                renderCoursesTable();
+            } catch (error) {
+                console.error('Error loading courses:', error);
+                document.getElementById('coursesTableBody').innerHTML = 
+                    '<tr><td colspan="5" class="error">Ошибка загрузки данных</td></tr>';
+            }
+        }
+
+        // Отображение таблицы курсов
+        function renderCoursesTable() {
+            const tbody = document.getElementById('coursesTableBody');
+            
+            if (courses.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="loading">Курсы не найдены</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = courses.map(course => `
+                <tr>
+                    <td>${course.title}</td>
+                    <td>${course.description || '-'}</td>
+                    <td>${course.lessons ? course.lessons.length : 0}</td>
+                    <td>${course.students ? course.students.length : 0}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-sm" onclick="editCourse('${course.id}')">Редактировать</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteCourse('${course.id}')">Удалить</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Загрузка отчетов
+        async function loadReports() {
+            try {
+                const response = await fetch('/api/reports', {
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) throw new Error('Failed to load reports');
+                
+                reports = await response.json();
+                renderReportsTable();
+                updateReportCityFilter();
+            } catch (error) {
+                console.error('Error loading reports:', error);
+                document.getElementById('reportsTableBody').innerHTML = 
+                    '<tr><td colspan="7" class="error">Ошибка загрузки данных</td></tr>';
+            }
+        }
+
+        // Отображение таблицы отчетов
+        function renderReportsTable() {
+            const tbody = document.getElementById('reportsTableBody');
+            const statusFilter = document.getElementById('statusFilter').value;
+            const cityFilter = document.getElementById('reportCityFilter').value;
+            
+            let filteredReports = reports;
+            
+            if (statusFilter) {
+                filteredReports = filteredReports.filter(r => r.status === statusFilter);
+            }
+            
+            if (cityFilter) {
+                filteredReports = filteredReports.filter(r => r.student.city === cityFilter);
+            }
+            
+            if (filteredReports.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="loading">Отчеты не найдены</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = filteredReports.map(report => `
+                <tr>
+                    <td>${report.student.name}</td>
+                    <td>${report.student.city}</td>
+                    <td>${report.course.title}</td>
+                    <td>${report.lesson.title}</td>
+                    <td><span class="status ${report.status}">${getStatusText(report.status)}</span></td>
+                    <td>${new Date(report.submitted_at).toLocaleDateString()}</td>
+                    <td>
+                        <div class="action-buttons">
+                            ${report.status === 'pending' ? `
+                                <button class="btn btn-sm btn-success" onclick="approveReport('${report.id}')">Одобрить</button>
+                                <button class="btn btn-sm btn-danger" onclick="rejectReport('${report.id}')">Отклонить</button>
+                            ` : ''}
+                            <button class="btn btn-sm" onclick="viewReport('${report.id}')">Просмотр</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Обновление фильтра городов для отчетов
+        function updateReportCityFilter() {
+            const cities = [...new Set(reports.map(r => r.student.city))].sort();
+            const select = document.getElementById('reportCityFilter');
+            
+            select.innerHTML = '<option value="">Все города</option>' +
+                cities.map(city => `<option value="${city}">${city}</option>`).join('');
+        }
+
+        // Фильтрация отчетов
+        function filterReports() {
+            renderReportsTable();
+        }
+
+        // Получение текста статуса
+        function getStatusText(status) {
+            switch(status) {
+                case 'pending': return 'На проверке';
+                case 'approved': return 'Одобрено';
+                case 'rejected': return 'Отклонено';
+                default: return status;
+            }
+        }
+
+        // Загрузка логов
+        async function loadLogs() {
+            try {
+                const response = await fetch('/api/logs', {
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) throw new Error('Failed to load logs');
+                
+                logs = await response.json();
+                renderLogsTable();
+            } catch (error) {
+                console.error('Error loading logs:', error);
+                document.getElementById('logsTableBody').innerHTML = 
+                    '<tr><td colspan="3" class="error">Ошибка загрузки данных</td></tr>';
+            }
+        }
+
+        // Отображение таблицы логов
+        function renderLogsTable() {
+            const tbody = document.getElementById('logsTableBody');
+            
+            if (logs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="loading">Логи не найдены</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = logs.map(log => `
+                <tr>
+                    <td>${log.source}</td>
+                    <td>${log.message}</td>
+                    <td>${new Date(log.created_at).toLocaleString()}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Показать модальное окно добавления студента
+        async function showAddStudentModal() {
+            // Загружаем курсы для чекбоксов
+            if (courses.length === 0) {
+                await loadCourses();
+            }
+            
+            const checkboxesContainer = document.getElementById('courseCheckboxes');
+            checkboxesContainer.innerHTML = courses.map(course => `
+                <label style="display: block; margin-bottom: 0.5rem;">
+                    <input type="checkbox" value="${course.id}" style="margin-right: 0.5rem;">
+                    ${course.title}
+                </label>
+            `).join('');
+            
+            document.getElementById('addStudentModal').style.display = 'block';
+        }
+
+        // Закрыть модальное окно
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Добавление студента
+        async function addStudent(event) {
+            event.preventDefault();
+            
+            const formData = {
+                tgid: document.getElementById('studentTgid').value,
+                name: document.getElementById('studentName').value,
+                city: document.getElementById('studentCity').value,
+                courseIds: Array.from(document.querySelectorAll('#courseCheckboxes input:checked'))
+                    .map(cb => cb.value)
+            };
+            
+            try {
+                const response = await fetch('/api/students', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(formData)
+                });
+                
+                if (!response.ok) throw new Error('Failed to add student');
+                
+                closeModal('addStudentModal');
+                document.getElementById('addStudentForm').reset();
+                loadStudents();
+                
+                showMessage('Студент успешно добавлен', 'success');
+            } catch (error) {
+                console.error('Error adding student:', error);
+                showMessage('Ошибка при добавлении студента', 'error');
+            }
+        }
+
+        // Управление курсами студента
+        async function manageStudentCourses(studentId) {
+            const student = students.find(s => s.id === studentId);
+            if (!student) return;
+            
+            const content = document.getElementById('manageCoursesContent');
+            content.innerHTML = `
+                <h4>${student.name} - Управление курсами</h4>
+                <div class="form-group">
+                    <label>Текущие курсы:</label>
+                    <div id="currentCourses">
+                        ${student.courses.map(course => `
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; border: 1px solid #ddd; margin-bottom: 0.5rem; border-radius: 4px;">
+                                <span>${course.title}</span>
+                                <button class="btn btn-sm btn-danger" onclick="unenrollStudent('${studentId}', '${course.id}')">Отчислить</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Добавить на курс:</label>
+                    <select id="enrollCourseSelect">
+                        <option value="">Выберите курс</option>
+                        ${courses.filter(course => !student.courses.some(sc => sc.id === course.id))
+                            .map(course => `<option value="${course.id}">${course.title}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <button class="btn" onclick="enrollStudent('${studentId}')">Зачислить</button>
+                    <button class="btn btn-secondary" onclick="closeModal('manageCoursesModal')">Закрыть</button>
+                </div>
+            `;
+            
+            document.getElementById('manageCoursesModal').style.display = 'block';
+        }
+
+        // Зачисление студента на курс
+        async function enrollStudent(studentId) {
+            const courseId = document.getElementById('enrollCourseSelect').value;
+            if (!courseId) return;
+            
+            try {
+                const response = await fetch(`/api/students/${studentId}/courses`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ course_id: courseId })
+                });
+                
+                if (!response.ok) throw new Error('Failed to enroll student');
+                
+                loadStudents();
+                manageStudentCourses(studentId); // Обновляем модальное окно
+                showMessage('Студент зачислен на курс', 'success');
+            } catch (error) {
+                console.error('Error enrolling student:', error);
+                showMessage('Ошибка при зачислении студента', 'error');
+            }
+        }
+
+        // Отчисление студента с курса
+        async function unenrollStudent(studentId, courseId) {
+            if (!confirm('Отчислить студента с курса?')) return;
+            
+            try {
+                const response = await fetch(`/api/students/${studentId}/courses/${courseId}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) throw new Error('Failed to unenroll student');
+                
+                loadStudents();
+                manageStudentCourses(studentId); // Обновляем модальное окно
+                showMessage('Студент отчислен с курса', 'success');
+            } catch (error) {
+                console.error('Error unenrolling student:', error);
+                showMessage('Ошибка при отчислении студента', 'error');
+            }
+        }
+
+        // Удаление студента
+        async function deleteStudent(studentId) {
+            if (!confirm('Удалить студента?')) return;
+            
+            try {
+                const response = await fetch(`/api/students/${studentId}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) throw new Error('Failed to delete student');
+                
+                loadStudents();
+                showMessage('Студент удален', 'success');
+            } catch (error) {
+                console.error('Error deleting student:', error);
+                showMessage('Ошибка при удалении студента', 'error');
+            }
+        }
+
+        // Показать сообщение
+        function showMessage(text, type) {
+            const message = document.createElement('div');
+            message.className = type;
+            message.textContent = text;
+            
+            const main = document.querySelector('.main');
+            main.insertBefore(message, main.firstChild);
+            
+            setTimeout(() => message.remove(), 5000);
+        }
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            loadStudents();
+            
+            // Обработчики форм
+            document.getElementById('addStudentForm').addEventListener('submit', addStudent);
+        });
     </script>
 </body>
 </html> 

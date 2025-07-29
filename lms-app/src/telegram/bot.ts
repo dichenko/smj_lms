@@ -160,9 +160,8 @@ export class TelegramBot {
       const student = await this.db.getStudentById(studentId);
       if (!student) return;
 
-      // Получаем все курсы студента (пока у нас один курс на студента, но готовимся к нескольким)
-      const courses = await this.db.getAllCourses();
-      const studentCourses = courses.filter(c => c.id === student.course_id);
+      // Получаем все курсы студента через новую таблицу student_courses
+      const studentCourses = await this.db.getStudentCourses(studentId);
 
       if (studentCourses.length === 0) {
         await this.sendMessage(chatId, '❌ У вас нет назначенных курсов');
@@ -174,12 +173,19 @@ export class TelegramBot {
 
       const buttons: InlineKeyboardButton[] = [];
 
-      for (const course of studentCourses) {
+      for (const studentCourse of studentCourses) {
+        const course = studentCourse.course;
         const lessons = await this.db.getLessonsByCourse(course.id);
         const reports = await this.db.getAllReports();
         const studentReports = reports.filter(r => r.student_id === student.id);
         
-        const completedLessons = studentReports.filter(r => r.status === 'approved').length;
+        // Подсчитываем прогресс только для уроков этого курса
+        const courseReports = studentReports.filter(r => {
+          const lesson = lessons.find(l => l.id === r.lesson_id);
+          return lesson && lesson.course_id === course.id;
+        });
+        
+        const completedLessons = courseReports.filter(r => r.status === 'approved').length;
         const totalLessons = lessons.length;
         const progress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
 
@@ -213,6 +219,15 @@ export class TelegramBot {
       
       if (!student || !course || lessons.length === 0) {
         await this.sendMessage(chatId, '❌ Данные не найдены');
+        return;
+      }
+
+      // Проверяем, что студент зачислен на этот курс
+      const studentCourses = await this.db.getStudentCourses(studentId);
+      const isEnrolled = studentCourses.some(sc => sc.course_id === courseId && sc.is_active);
+      
+      if (!isEnrolled) {
+        await this.sendMessage(chatId, '❌ Вы не зачислены на этот курс');
         return;
       }
 

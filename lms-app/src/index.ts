@@ -154,17 +154,37 @@ api.get('/students', requireAuth, async (c) => {
   }
 });
 
-api.post('/students', async (c) => {
+api.post('/students', requireAuth, async (c) => {
   try {
     const db = c.get('db');
     const body = await c.req.json();
     
-    if (!body.tgid || !body.name || !body.city || !body.course_id) {
-      return c.json({ error: 'Missing required fields: tgid, name, city, course_id' }, 400);
+    if (!body.tgid || !body.name || !body.city) {
+      return c.json({ error: 'Missing required fields: tgid, name, city' }, 400);
     }
 
-    const student = await db.createStudent(body);
-    return c.json({ student }, 201);
+    // Создаем студента
+    const student = await db.createStudent({
+      tgid: body.tgid,
+      name: body.name,
+      city: body.city
+    });
+
+    // Зачисляем на курсы, если указаны
+    if (body.courseIds && Array.isArray(body.courseIds)) {
+      for (const courseId of body.courseIds) {
+        await db.enrollStudentInCourse({
+          student_id: student.id,
+          course_id: courseId
+        });
+      }
+    }
+
+    // Получаем студента с курсами для ответа
+    const studentsWithCourses = await db.getAllStudents();
+    const studentWithCourses = studentsWithCourses.find(s => s.id === student.id);
+    
+    return c.json({ student: studentWithCourses }, 201);
   } catch (error: any) {
     return c.json({ error: 'Failed to create student' }, 500);
   }
@@ -416,6 +436,57 @@ api.get('/logs', async (c) => {
     return c.json({ logs });
   } catch (error: any) {
     return c.json({ error: 'Failed to get error logs' }, 500);
+  }
+});
+
+// Student Courses management routes
+api.get('/students/:studentId/courses', requireAuth, async (c) => {
+  try {
+    const db = c.get('db');
+    const studentId = c.req.param('studentId');
+    
+    const studentCourses = await db.getStudentCourses(studentId);
+    return c.json({ studentCourses });
+  } catch (error: any) {
+    return c.json({ error: 'Failed to get student courses' }, 500);
+  }
+});
+
+api.post('/students/:studentId/courses', requireAuth, async (c) => {
+  try {
+    const db = c.get('db');
+    const studentId = c.req.param('studentId');
+    const body = await c.req.json();
+    
+    if (!body.course_id) {
+      return c.json({ error: 'Missing required field: course_id' }, 400);
+    }
+
+    const studentCourse = await db.enrollStudentInCourse({
+      student_id: studentId,
+      course_id: body.course_id
+    });
+    
+    return c.json({ studentCourse }, 201);
+  } catch (error: any) {
+    return c.json({ error: 'Failed to enroll student in course' }, 500);
+  }
+});
+
+api.delete('/students/:studentId/courses/:courseId', requireAuth, async (c) => {
+  try {
+    const db = c.get('db');
+    const studentId = c.req.param('studentId');
+    const courseId = c.req.param('courseId');
+    
+    const deleted = await db.unenrollStudentFromCourse(studentId, courseId);
+    if (!deleted) {
+      return c.json({ error: 'Student course not found' }, 404);
+    }
+    
+    return c.json({ success: true });
+  } catch (error: any) {
+    return c.json({ error: 'Failed to unenroll student from course' }, 500);
   }
 });
 

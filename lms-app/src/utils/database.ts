@@ -2,10 +2,10 @@
 
 import type { D1Database } from '@cloudflare/workers-types';
 import type {
-  Admin, Course, Student, Lesson, Report, ErrorLog, AdminSession,
-  CreateCourse, CreateStudent, CreateLesson, CreateReport, ReviewReport, CreateErrorLog,
-  UpdateCourse, UpdateStudent, UpdateLesson,
-  StudentWithCourse, LessonWithCourse, ReportWithDetails
+  Admin, Course, Student, StudentCourse, Lesson, Report, ErrorLog, AdminSession,
+  CreateCourse, CreateStudent, CreateStudentCourse, CreateLesson, CreateReport, ReviewReport, CreateErrorLog,
+  UpdateCourse, UpdateStudent, UpdateStudentCourse, UpdateLesson,
+  StudentWithCourses, StudentCourseWithDetails, LessonWithCourse, ReportWithDetails
 } from '../models/database';
 
 export class DatabaseService {
@@ -100,36 +100,53 @@ export class DatabaseService {
   }
 
   // Student methods
-  async getAllStudents(): Promise<StudentWithCourse[]> {
+  async getAllStudents(): Promise<StudentWithCourses[]> {
     const result = await this.db.prepare(`
       SELECT 
         s.*,
-        c.id as course_id_full,
+        c.id as course_id,
         c.title as course_title,
         c.description as course_description,
         c.created_at as course_created_at,
         c.updated_at as course_updated_at
       FROM students s
-      LEFT JOIN courses c ON s.course_id = c.id
+      LEFT JOIN student_courses sc ON s.id = sc.student_id AND sc.is_active = 1
+      LEFT JOIN courses c ON sc.course_id = c.id
       ORDER BY s.created_at DESC
     `).all();
 
-    return result.results.map((row: any) => ({
-      id: row.id,
-      tgid: row.tgid,
-      name: row.name,
-      city: row.city,
-      course_id: row.course_id,
-      created_at: row.created_at,
-      updated_at: row.updated_at,
-      course: {
-        id: row.course_id_full,
-        title: row.course_title,
-        description: row.course_description,
-        created_at: row.course_created_at,
-        updated_at: row.course_updated_at
+    // Группируем студентов с их курсами
+    const studentsMap = new Map<string, StudentWithCourses>();
+    
+    for (const row of result.results as any[]) {
+      const studentId = row.id;
+      
+      if (!studentsMap.has(studentId)) {
+        studentsMap.set(studentId, {
+          id: row.id,
+          tgid: row.tgid,
+          name: row.name,
+          city: row.city,
+          created_at: row.created_at,
+          updated_at: row.updated_at,
+          courses: []
+        });
       }
-    }));
+      
+      const student = studentsMap.get(studentId)!;
+      
+      if (row.course_id) {
+        student.courses.push({
+          id: row.course_id,
+          title: row.course_title,
+          description: row.course_description,
+          created_at: row.course_created_at,
+          updated_at: row.course_updated_at
+        });
+      }
+    }
+    
+    return Array.from(studentsMap.values());
   }
 
   async getStudentById(id: string): Promise<Student | null> {
@@ -151,8 +168,8 @@ export class DatabaseService {
     const now = this.now();
     
     await this.db.prepare(
-      'INSERT INTO students (id, tgid, name, city, course_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
-    ).bind(id, data.tgid, data.name, data.city, data.course_id, now, now).run();
+      'INSERT INTO students (id, tgid, name, city, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind(id, data.tgid, data.name, data.city, now, now).run();
 
     const student = await this.getStudentById(id);
     if (!student) throw new Error('Failed to create student');
@@ -171,10 +188,6 @@ export class DatabaseService {
     if (data.city !== undefined) {
       updates.push('city = ?');
       values.push(data.city);
-    }
-    if (data.course_id !== undefined) {
-      updates.push('course_id = ?');
-      values.push(data.course_id);
     }
 
     if (updates.length === 0) {
@@ -467,5 +480,87 @@ export class DatabaseService {
     ).bind(...values).run();
 
     return this.getReportById(id);
+  }
+
+  // Student Courses methods
+  async getStudentCourses(studentId: string): Promise<StudentCourseWithDetails[]> {
+    const result = await this.db.prepare(`
+      SELECT 
+        sc.*,
+        s.id as student_id_full,
+        s.tgid as student_tgid,
+        s.name as student_name,
+        s.city as student_city,
+        s.created_at as student_created_at,
+        s.updated_at as student_updated_at,
+        c.id as course_id_full,
+        c.title as course_title,
+        c.description as course_description,
+        c.created_at as course_created_at,
+        c.updated_at as course_updated_at
+      FROM student_courses sc
+      JOIN students s ON sc.student_id = s.id
+      JOIN courses c ON sc.course_id = c.id
+      WHERE sc.student_id = ? AND sc.is_active = 1
+      ORDER BY sc.enrolled_at DESC
+    `).bind(studentId).all<StudentCourseWithDetails>();
+    
+    return result.results;
+  }
+
+  async enrollStudentInCourse(data: CreateStudentCourse): Promise<StudentCourse> {
+    const id = this.generateId();
+    const now = this.now();
+    
+    await this.db.prepare(
+      'INSERT INTO student_courses (id, student_id, course_id, enrolled_at, is_active) VALUES (?, ?, ?, ?, ?)'
+    ).bind(id, data.student_id, data.course_id, now, true).run();
+
+    const result = await this.db.prepare(
+      'SELECT * FROM student_courses WHERE id = ?'
+    ).bind(id).first<StudentCourse>();
+    
+    if (!result) throw new Error('Failed to enroll student in course');
+    return result;
+  }
+
+  async unenrollStudentFromCourse(studentId: string, courseId: string): Promise<boolean> {
+    const result = await this.db.prepare(
+      'UPDATE student_courses SET is_active = ? WHERE student_id = ? AND course_id = ?'
+    ).bind(false, studentId, courseId).run();
+    return result.changes > 0;
+  }
+
+  async getStudentsByCourse(courseId: string): Promise<Student[]> {
+    const result = await this.db.prepare(`
+      SELECT s.*
+      FROM students s
+      JOIN student_courses sc ON s.id = sc.student_id
+      WHERE sc.course_id = ? AND sc.is_active = 1
+      ORDER BY s.name
+    `).bind(courseId).all<Student>();
+    
+    return result.results;
+  }
+
+  async getStudentProgress(studentId: string, courseId: string): Promise<{ completed: number; total: number; percentage: number }> {
+    // Получаем общее количество уроков в курсе
+    const totalLessons = await this.db.prepare(
+      'SELECT COUNT(*) as count FROM lessons WHERE course_id = ?'
+    ).bind(courseId).first<{ count: number }>();
+    
+    // Получаем количество одобренных отчетов студента по этому курсу
+    const completedLessons = await this.db.prepare(`
+      SELECT COUNT(*) as count 
+      FROM reports r
+      JOIN lessons l ON r.lesson_id = l.id
+      WHERE r.student_id = ? AND l.course_id = ? AND r.status = 'approved'
+    `).bind(studentId, courseId).first<{ count: number }>();
+    
+    const total = totalLessons?.count || 0;
+    const completed = completedLessons?.count || 0;
+    const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+    
+    return { completed, total, percentage };
   }
 } 
