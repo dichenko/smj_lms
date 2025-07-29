@@ -3,7 +3,7 @@ import { DatabaseService } from '../utils/database';
 interface TelegramUpdate {
   update_id: number;
   message?: TelegramMessage;
-  callback_query?: any;
+  callback_query?: TelegramCallbackQuery;
 }
 
 interface TelegramMessage {
@@ -13,7 +13,13 @@ interface TelegramMessage {
   text?: string;
   document?: TelegramDocument;
   photo?: TelegramPhoto[];
-  reply_to_message?: TelegramMessage;
+}
+
+interface TelegramCallbackQuery {
+  id: string;
+  from: TelegramUser;
+  message: TelegramMessage;
+  data: string;
 }
 
 interface TelegramUser {
@@ -45,6 +51,15 @@ interface TelegramPhoto {
   height: number;
 }
 
+interface InlineKeyboard {
+  inline_keyboard: InlineKeyboardButton[][];
+}
+
+interface InlineKeyboardButton {
+  text: string;
+  callback_data: string;
+}
+
 export class TelegramBot {
   private botToken: string;
   private db: DatabaseService;
@@ -60,12 +75,12 @@ export class TelegramBot {
   // Обработка webhook обновлений
   async handleUpdate(update: TelegramUpdate): Promise<void> {
     try {
-      if (update.message) {
-        await this.handleMessage(update.message);
-      } else if (update.callback_query) {
+      if (update.callback_query) {
         await this.handleCallbackQuery(update.callback_query);
+      } else if (update.message) {
+        await this.handleMessage(update.message);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error handling update:', error);
       await this.db.logError({
         source: 'telegram_bot',
@@ -87,29 +102,16 @@ export class TelegramBot {
       return;
     }
 
-    // Обработка документов
-    if (message.document) {
-      await this.handleDocument(message);
+    // Обработка файлов для отчетов
+    if (message.document || message.photo) {
+      await this.handleFileUpload(message);
       return;
     }
 
-    // Обработка фото
-    if (message.photo && message.photo.length > 0) {
-      await this.handlePhoto(message);
-      return;
-    }
-
-    // Обработка обычных текстовых сообщений
-    if (text && !text.startsWith('/')) {
-      await this.sendMessage(chatId, 
-        '💡 Используйте команды для взаимодействия с ботом:\n\n' +
-        '/start - Авторизация\n' +
-        '/lesson - Текущий урок\n' +
-        '/progress - Прогресс\n' +
-        '/reports - История отчетов\n' +
-        '/help - Справка'
-      );
-    }
+    // Обычные сообщения
+    await this.sendMessage(chatId, 
+      '💡 Используйте команду /start для начала работы с ботом'
+    );
   }
 
   // Обработка команд
@@ -118,36 +120,20 @@ export class TelegramBot {
     const text = message.text || '';
     const tgid = message.from.id.toString();
 
-    switch (text.split(' ')[0]) {
-      case '/start':
-        await this.handleStartCommand(message);
-        break;
-      case '/help':
-        await this.handleHelpCommand(message);
-        break;
-      case '/lesson':
-        await this.handleLessonCommand(message);
-        break;
-      case '/progress':
-        await this.handleProgressCommand(message);
-        break;
-      case '/reports':
-        await this.handleReportsCommand(message);
-        break;
-      case '/submit':
-        await this.handleSubmitCommand(message);
-        break;
-      default:
-        await this.sendMessage(chatId, '❌ Неизвестная команда. Используйте /help для справки.');
+    if (text === '/start') {
+      await this.handleStartCommand(message);
+    } else {
+      await this.sendMessage(chatId, '❌ Неизвестная команда. Используйте /start');
     }
   }
 
-  // Команда /start
+  // Команда /start - главная логика
   private async handleStartCommand(message: TelegramMessage): Promise<void> {
     const chatId = message.chat.id;
     const tgid = message.from.id.toString();
 
     try {
+      // Проверяем, есть ли студент в базе
       const student = await this.db.getStudentByTgid(tgid);
       
       if (!student) {
@@ -160,42 +146,180 @@ export class TelegramBot {
         return;
       }
 
-      await this.sendMessage(chatId,
-        `👋 Добро пожаловать, ${student.name}!\n\n` +
-        '🎓 Вы успешно авторизованы в системе SMJ LMS.\n\n' +
-        'Доступные команды:\n' +
-        '/lesson - Текущий урок\n' +
-        '/progress - Ваш прогресс\n' +
-        '/reports - История отчетов\n' +
-        '/help - Справка'
-      );
-    } catch (error) {
+      await this.showStudentDashboard(chatId, student.id);
+
+    } catch (error: any) {
       console.error('Error in /start command:', error);
       await this.sendMessage(chatId, '❌ Произошла ошибка. Попробуйте позже.');
     }
   }
 
-  // Команда /help
-  private async handleHelpCommand(message: TelegramMessage): Promise<void> {
-    const chatId = message.chat.id;
+  // Показать главную панель студента
+  private async showStudentDashboard(chatId: number, studentId: string): Promise<void> {
+    try {
+      const student = await this.db.getStudentById(studentId);
+      if (!student) return;
 
-    await this.sendMessage(chatId,
-      '📚 **SMJ LMS - Справка**\n\n' +
-      '**Основные команды:**\n' +
-      '/start - Авторизация в системе\n' +
-      '/lesson - Показать текущий урок\n' +
-      '/progress - Ваш прогресс обучения\n' +
-      '/reports - История ваших отчетов\n' +
-      '/submit - Отправить отчет (ответьте на сообщение с файлом)\n\n' +
-      '**Как отправить отчет:**\n' +
-      '1. Отправьте файл (PDF, DOC, DOCX)\n' +
-      '2. Ответьте на него командой /submit\n\n' +
-      '❓ По всем вопросам обращайтесь к администратору'
-    );
+      // Получаем все курсы студента (пока у нас один курс на студента, но готовимся к нескольким)
+      const courses = await this.db.getAllCourses();
+      const studentCourses = courses.filter(c => c.id === student.course_id);
+
+      if (studentCourses.length === 0) {
+        await this.sendMessage(chatId, '❌ У вас нет назначенных курсов');
+        return;
+      }
+
+      let message = `👋 Добро пожаловать, ${student.name}!\n\n`;
+      message += '📚 **Ваши курсы:**\n\n';
+
+      const buttons: InlineKeyboardButton[] = [];
+
+      for (const course of studentCourses) {
+        const lessons = await this.db.getLessonsByCourse(course.id);
+        const reports = await this.db.getAllReports();
+        const studentReports = reports.filter(r => r.student_id === student.id);
+        
+        const completedLessons = studentReports.filter(r => r.status === 'approved').length;
+        const totalLessons = lessons.length;
+        const progress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+
+        message += `• **${course.title}**\n`;
+        message += `  Прогресс: ${completedLessons}/${totalLessons} (${progress}%)\n\n`;
+
+        buttons.push({
+          text: `📖 ${course.title} (${progress}%)`,
+          callback_data: `course_${course.id}`
+        });
+      }
+
+      const keyboard: InlineKeyboard = {
+        inline_keyboard: [buttons]
+      };
+
+      await this.sendMessageWithKeyboard(chatId, message, keyboard);
+
+    } catch (error: any) {
+      console.error('Error showing dashboard:', error);
+      await this.sendMessage(chatId, '❌ Произошла ошибка при загрузке данных');
+    }
   }
 
-  // Команда /lesson
-  private async handleLessonCommand(message: TelegramMessage): Promise<void> {
+  // Показать текущий урок курса
+  private async showCurrentLesson(chatId: number, studentId: string, courseId: string): Promise<void> {
+    try {
+      const student = await this.db.getStudentById(studentId);
+      const course = await this.db.getCourseById(courseId);
+      const lessons = await this.db.getLessonsByCourse(courseId);
+      
+      if (!student || !course || lessons.length === 0) {
+        await this.sendMessage(chatId, '❌ Данные не найдены');
+        return;
+      }
+
+      // Сортируем уроки по порядку
+      lessons.sort((a, b) => a.order_num - b.order_num);
+
+      // Находим первый незавершенный урок
+      const reports = await this.db.getAllReports();
+      const studentReports = reports.filter(r => r.student_id === student.id);
+      
+      let currentLesson = lessons[0];
+      
+      for (const lesson of lessons) {
+        const report = studentReports.find(r => r.lesson_id === lesson.id);
+        if (!report || report.status !== 'approved') {
+          currentLesson = lesson;
+          break;
+        }
+      }
+
+      // Проверяем статус текущего урока
+      const currentReport = studentReports.find(r => r.lesson_id === currentLesson.id);
+      
+      let message = `📖 **${course.title}**\n\n`;
+      message += `**Урок ${currentLesson.order_num}: ${currentLesson.title}**\n\n`;
+      message += `${currentLesson.content}\n\n`;
+
+      if (currentReport) {
+        if (currentReport.status === 'pending') {
+          message += '⏳ **Статус:** Ваш отчет на проверке\n\n';
+        } else if (currentReport.status === 'rejected') {
+          message += '❌ **Статус:** Отчет отклонен\n';
+          if (currentReport.admin_comment) {
+            message += `💬 **Комментарий:** ${currentReport.admin_comment}\n\n`;
+          }
+        }
+      }
+
+      const keyboard: InlineKeyboard = {
+        inline_keyboard: [
+          [
+            { text: '🔙 Назад к курсам', callback_data: 'back_to_courses' },
+            { text: '📝 Сдать отчет', callback_data: `submit_${currentLesson.id}` }
+          ]
+        ]
+      };
+
+      await this.sendMessageWithKeyboard(chatId, message, keyboard);
+
+    } catch (error: any) {
+      console.error('Error showing lesson:', error);
+      await this.sendMessage(chatId, '❌ Произошла ошибка при загрузке урока');
+    }
+  }
+
+  // Обработка callback запросов (кнопок)
+  private async handleCallbackQuery(callbackQuery: TelegramCallbackQuery): Promise<void> {
+    const chatId = callbackQuery.message.chat.id;
+    const tgid = callbackQuery.from.id.toString();
+    const data = callbackQuery.data;
+
+    try {
+      const student = await this.db.getStudentByTgid(tgid);
+      if (!student) {
+        await this.answerCallbackQuery(callbackQuery.id, 'Вы не зарегистрированы в системе');
+        return;
+      }
+
+      if (data.startsWith('course_')) {
+        const courseId = data.replace('course_', '');
+        await this.showCurrentLesson(chatId, student.id, courseId);
+      } else if (data === 'back_to_courses') {
+        await this.showStudentDashboard(chatId, student.id);
+      } else if (data.startsWith('submit_')) {
+        const lessonId = data.replace('submit_', '');
+        await this.handleSubmitRequest(chatId, student.id, lessonId);
+      } else if (data.startsWith('admin_approve_')) {
+        await this.handleAdminApprove(callbackQuery);
+      } else if (data.startsWith('admin_reject_')) {
+        await this.handleAdminReject(callbackQuery);
+      }
+
+      await this.answerCallbackQuery(callbackQuery.id);
+
+    } catch (error: any) {
+      console.error('Error handling callback:', error);
+      await this.answerCallbackQuery(callbackQuery.id, 'Произошла ошибка');
+    }
+  }
+
+  // Запрос на отправку отчета
+  private async handleSubmitRequest(chatId: number, studentId: string, lessonId: string): Promise<void> {
+    await this.sendMessage(chatId,
+      '📝 **Отправка отчета**\n\n' +
+      'Отправьте файл (документ, изображение) с вашим отчетом.\n\n' +
+      'Поддерживаемые форматы:\n' +
+      '• Документы (PDF, DOC, DOCX)\n' +
+      '• Изображения (JPG, PNG)\n\n' +
+      '❗ После отправки файла он автоматически будет передан на проверку'
+    );
+
+    // Сохраняем состояние ожидания файла (можно использовать временное хранилище)
+    // Пока используем простой подход - следующий файл от этого пользователя будет отчетом
+  }
+
+  // Обработка загруженных файлов
+  private async handleFileUpload(message: TelegramMessage): Promise<void> {
     const chatId = message.chat.id;
     const tgid = message.from.id.toString();
 
@@ -206,255 +330,168 @@ export class TelegramBot {
         return;
       }
 
-      const course = await this.db.getCourseById(student.course_id);
-      if (!course) {
+      // Находим текущий урок студента
+      const courses = await this.db.getAllCourses();
+      const studentCourse = courses.find(c => c.id === student.course_id);
+      
+      if (!studentCourse) {
         await this.sendMessage(chatId, '❌ Курс не найден');
         return;
       }
 
-      const lessons = await this.db.getLessonsByCourse(student.course_id);
-      if (lessons.length === 0) {
-        await this.sendMessage(chatId, '📚 В вашем курсе пока нет уроков');
-        return;
-      }
+      const lessons = await this.db.getLessonsByCourse(studentCourse.id);
+      lessons.sort((a, b) => a.order_num - b.order_num);
 
       const reports = await this.db.getAllReports();
       const studentReports = reports.filter(r => r.student_id === student.id);
       
-      let currentLessonIndex = 0;
-      for (let i = 0; i < lessons.length; i++) {
-        const lessonReport = studentReports.find(r => r.lesson_id === lessons[i].id);
-        if (!lessonReport || lessonReport.status === 'rejected') {
-          currentLessonIndex = i;
-          break;
-        }
-        if (i === lessons.length - 1) {
-          currentLessonIndex = i;
-        }
-      }
-
-      const currentLesson = lessons[currentLessonIndex];
-      const progress = `${currentLessonIndex + 1} из ${lessons.length}`;
-
-      await this.sendMessage(chatId,
-        `📚 **Текущий урок**\n\n` +
-        `**Курс:** ${course.title}\n` +
-        `**Урок:** ${currentLesson.title}\n` +
-        `**Прогресс:** ${progress}\n\n` +
-        `**Содержание урока:**\n${currentLesson.content}\n\n` +
-        `📝 Отправьте файл с отчетом и ответьте на него командой /submit`
-      );
-    } catch (error) {
-      console.error('Error in /lesson command:', error);
-      await this.sendMessage(chatId, '❌ Произошла ошибка. Попробуйте позже.');
-    }
-  }
-
-  // Команда /progress
-  private async handleProgressCommand(message: TelegramMessage): Promise<void> {
-    const chatId = message.chat.id;
-    const tgid = message.from.id.toString();
-
-    try {
-      const student = await this.db.getStudentByTgid(tgid);
-      if (!student) {
-        await this.sendMessage(chatId, '❌ Вы не зарегистрированы в системе');
-        return;
-      }
-
-      const course = await this.db.getCourseById(student.course_id);
-      const lessons = await this.db.getLessonsByCourse(student.course_id);
-      const reports = await this.db.getAllReports();
-      const studentReports = reports.filter(r => r.student_id === student.id);
-
-      let completed = 0;
-      let pending = 0;
-      let rejected = 0;
-
+      let currentLesson = lessons[0];
+      
       for (const lesson of lessons) {
         const report = studentReports.find(r => r.lesson_id === lesson.id);
-        if (report) {
-          if (report.status === 'approved') completed++;
-          else if (report.status === 'pending') pending++;
-          else if (report.status === 'rejected') rejected++;
-        }
-      }
-
-      const total = lessons.length;
-      const progressPercent = Math.round((completed / total) * 100);
-
-      await this.sendMessage(chatId,
-        `📊 **Ваш прогресс**\n\n` +
-        `**Курс:** ${course?.title || 'Неизвестно'}\n` +
-        `**Всего уроков:** ${total}\n` +
-        `**Завершено:** ${completed} ✅\n` +
-        `**На проверке:** ${pending} ⏳\n` +
-        `**Отклонено:** ${rejected} ❌\n\n` +
-        `**Общий прогресс:** ${progressPercent}%\n\n` +
-        `${'█'.repeat(Math.floor(progressPercent / 10))}${'░'.repeat(10 - Math.floor(progressPercent / 10))}`
-      );
-    } catch (error) {
-      console.error('Error in /progress command:', error);
-      await this.sendMessage(chatId, '❌ Произошла ошибка. Попробуйте позже.');
-    }
-  }
-
-  // Команда /reports
-  private async handleReportsCommand(message: TelegramMessage): Promise<void> {
-    const chatId = message.chat.id;
-    const tgid = message.from.id.toString();
-
-    try {
-      const student = await this.db.getStudentByTgid(tgid);
-      if (!student) {
-        await this.sendMessage(chatId, '❌ Вы не зарегистрированы в системе');
-        return;
-      }
-
-      const reports = await this.db.getAllReports();
-      const studentReports = reports.filter(r => r.student_id === student.id);
-
-      if (studentReports.length === 0) {
-        await this.sendMessage(chatId, '📝 У вас пока нет отправленных отчетов');
-        return;
-      }
-
-      let message = '📝 **История ваших отчетов:**\n\n';
-      
-      for (const report of studentReports.slice(-5)) {
-        const lesson = await this.db.getLessonById(report.lesson_id);
-        const status = report.status === 'approved' ? '✅' : 
-                      report.status === 'pending' ? '⏳' : '❌';
-        
-        message += `${status} **${lesson?.title || 'Неизвестный урок'}**\n`;
-        message += `📅 ${new Date(report.submitted_at).toLocaleDateString('ru-RU')}\n`;
-        message += `Статус: ${this.getStatusText(report.status)}\n`;
-        
-        if (report.admin_comment) {
-          message += `💬 Комментарий: ${report.admin_comment}\n`;
-        }
-        message += '\n';
-      }
-
-      await this.sendMessage(chatId, message);
-    } catch (error) {
-      console.error('Error in /reports command:', error);
-      await this.sendMessage(chatId, '❌ Произошла ошибка. Попробуйте позже.');
-    }
-  }
-
-  // Команда /submit
-  private async handleSubmitCommand(message: TelegramMessage): Promise<void> {
-    const chatId = message.chat.id;
-    const tgid = message.from.id.toString();
-
-    if (!message.reply_to_message) {
-      await this.sendMessage(chatId, '❌ Ответьте на сообщение с файлом командой /submit');
-      return;
-    }
-
-    try {
-      const student = await this.db.getStudentByTgid(tgid);
-      if (!student) {
-        await this.sendMessage(chatId, '❌ Вы не зарегистрированы в системе');
-        return;
-      }
-
-      const replyMessage = message.reply_to_message;
-      const file = replyMessage.document || replyMessage.photo?.[0];
-
-      if (!file) {
-        await this.sendMessage(chatId, '❌ Файл не найден. Отправьте документ или фото');
-        return;
-      }
-
-      const lessons = await this.db.getLessonsByCourse(student.course_id);
-      const reports = await this.db.getAllReports();
-      const studentReports = reports.filter(r => r.student_id === student.id);
-      
-      let currentLessonIndex = 0;
-      for (let i = 0; i < lessons.length; i++) {
-        const lessonReport = studentReports.find(r => r.lesson_id === lessons[i].id);
-        if (!lessonReport || lessonReport.status === 'rejected') {
-          currentLessonIndex = i;
+        if (!report || report.status !== 'approved') {
+          currentLesson = lesson;
           break;
         }
       }
 
-      const currentLesson = lessons[currentLessonIndex];
-      if (!currentLesson) {
-        await this.sendMessage(chatId, '❌ Не удалось определить текущий урок');
-        return;
-      }
-
+      // Создаем или обновляем отчет
       const existingReport = studentReports.find(r => r.lesson_id === currentLesson.id);
-      if (existingReport && existingReport.status !== 'rejected') {
+      
+      let report;
+      if (existingReport && existingReport.status === 'rejected') {
+        // Обновляем отклоненный отчет
+        report = await this.db.updateReport(existingReport.id, { status: 'pending' });
+      } else if (!existingReport) {
+        // Создаем новый отчет
+        report = await this.db.createReport({
+          student_id: student.id,
+          lesson_id: currentLesson.id
+        });
+      } else {
         await this.sendMessage(chatId, '❌ Отчет для этого урока уже отправлен');
         return;
       }
 
-      const report = await this.db.createReport({
-        student_id: student.id,
-        lesson_id: currentLesson.id
-      });
-
+      // Отправляем файл и информацию админу
       const adminMessage = 
         `📝 **Новый отчет**\n\n` +
         `**Студент:** ${student.name}\n` +
         `**Город:** ${student.city}\n` +
-        `**Урок:** ${currentLesson.title}\n` +
-        `**ID отчета:** ${report.id}\n\n` +
-        `Для рецензирования используйте веб-интерфейс`;
+        `**Курс:** ${studentCourse.title}\n` +
+        `**Урок ${currentLesson.order_num}:** ${currentLesson.title}\n\n` +
+        `**Задание:**\n${currentLesson.content}\n\n` +
+        `**ID отчета:** ${report.id}`;
 
-      await this.sendMessage(this.adminChatId, adminMessage);
+      const adminKeyboard: InlineKeyboard = {
+        inline_keyboard: [
+          [
+            { text: '✅ Принять', callback_data: `admin_approve_${report.id}` },
+            { text: '❌ На доработку', callback_data: `admin_reject_${report.id}` }
+          ]
+        ]
+      };
+
+      await this.sendMessageWithKeyboard(this.adminChatId, adminMessage, adminKeyboard);
       
+      // Пересылаем файл администратору
+      await this.forwardMessage(this.adminChatId, chatId, message.message_id);
+
+      // Уведомляем студента
       await this.sendMessage(chatId,
-        `✅ **Отчет отправлен!**\n\n` +
+        `✅ **Отчет принят на проверку!**\n\n` +
         `**Урок:** ${currentLesson.title}\n` +
         `**Статус:** На проверке ⏳\n\n` +
         `Вы получите уведомление, когда отчет будет проверен.`
       );
 
-    } catch (error) {
-      console.error('Error in /submit command:', error);
-      await this.sendMessage(chatId, '❌ Произошла ошибка при отправке отчета. Попробуйте позже.');
+    } catch (error: any) {
+      console.error('Error handling file upload:', error);
+      await this.sendMessage(chatId, '❌ Произошла ошибка при отправке отчета');
     }
   }
 
-  // Обработка документов
-  private async handleDocument(message: TelegramMessage): Promise<void> {
-    const chatId = message.chat.id;
+  // Админ одобряет отчет
+  private async handleAdminApprove(callbackQuery: TelegramCallbackQuery): Promise<void> {
+    const reportId = callbackQuery.data.replace('admin_approve_', '');
+    
+    try {
+      const report = await this.db.getReportById(reportId);
+      if (!report) {
+        await this.answerCallbackQuery(callbackQuery.id, 'Отчет не найден');
+        return;
+      }
 
-    await this.sendMessage(chatId,
-      '📎 Файл получен!\n\n' +
-      'Чтобы отправить его как отчет, ответьте на это сообщение командой /submit'
-    );
+      // Обновляем статус отчета
+      await this.db.reviewReport(reportId, {
+        status: 'approved',
+        admin_comment: undefined,
+        reviewed_by: 'admin'
+      });
+
+      // Получаем данные для уведомления студента
+      const student = await this.db.getStudentById(report.student_id);
+      const lesson = await this.db.getLessonById(report.lesson_id);
+      
+      if (student && lesson) {
+        // Уведомляем студента
+        await this.sendMessage(student.tgid,
+          `🎉 **Отчет одобрен!**\n\n` +
+          `**Урок:** ${lesson.title}\n` +
+          `**Статус:** Принят ✅\n\n` +
+          `Поздравляем! Вы можете перейти к следующему уроку.\n\n` +
+          `Используйте /start для продолжения обучения.`
+        );
+      }
+
+      // Обновляем сообщение админа
+      await this.editMessageText(
+        callbackQuery.message.chat.id,
+        callbackQuery.message.message_id,
+        callbackQuery.message.text + '\n\n✅ **ОДОБРЕНО**'
+      );
+
+      await this.answerCallbackQuery(callbackQuery.id, 'Отчет одобрен!');
+
+    } catch (error: any) {
+      console.error('Error approving report:', error);
+      await this.answerCallbackQuery(callbackQuery.id, 'Ошибка при одобрении');
+    }
   }
 
-  // Обработка фото
-  private async handlePhoto(message: TelegramMessage): Promise<void> {
-    const chatId = message.chat.id;
+  // Админ отклоняет отчет
+  private async handleAdminReject(callbackQuery: TelegramCallbackQuery): Promise<void> {
+    const reportId = callbackQuery.data.replace('admin_reject_', '');
+    
+    try {
+      const report = await this.db.getReportById(reportId);
+      if (!report) {
+        await this.answerCallbackQuery(callbackQuery.id, 'Отчет не найден');
+        return;
+      }
 
-    await this.sendMessage(chatId,
-      '📸 Фото получено!\n\n' +
-      'Чтобы отправить его как отчет, ответьте на это сообщение командой /submit'
-    );
+      // Просим админа написать комментарий
+      await this.sendMessage(callbackQuery.message.chat.id,
+        `📝 **Отклонение отчета**\n\n` +
+        `Напишите комментарий для студента (или отправьте пустое сообщение):\n\n` +
+        `ID отчета: ${reportId}`
+      );
+
+      await this.answerCallbackQuery(callbackQuery.id, 'Напишите комментарий для студента');
+
+    } catch (error: any) {
+      console.error('Error rejecting report:', error);
+      await this.answerCallbackQuery(callbackQuery.id, 'Ошибка при отклонении');
+    }
   }
 
-  // Обработка callback query
-  private async handleCallbackQuery(callbackQuery: any): Promise<void> {
-    // TODO: Реализовать обработку inline кнопок
-    console.log('Callback query received:', callbackQuery);
-  }
+  // Вспомогательные методы для работы с Telegram API
 
-  // Отправка сообщения
   async sendMessage(chatId: number | string, text: string): Promise<boolean> {
     try {
       const response = await fetch(`${this.apiBase}${this.botToken}/sendMessage`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           chat_id: chatId,
           text: text,
@@ -462,15 +499,86 @@ export class TelegramBot {
         })
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        console.error('Telegram API error:', error);
-        return false;
-      }
-
-      return true;
+      return response.ok;
     } catch (error) {
       console.error('Error sending message:', error);
+      return false;
+    }
+  }
+
+  async sendMessageWithKeyboard(chatId: number | string, text: string, keyboard: InlineKeyboard): Promise<boolean> {
+    try {
+      const response = await fetch(`${this.apiBase}${this.botToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: text,
+          parse_mode: 'Markdown',
+          reply_markup: keyboard
+        })
+      });
+
+      return response.ok;
+    } catch (error) {
+      console.error('Error sending message with keyboard:', error);
+      return false;
+    }
+  }
+
+  async answerCallbackQuery(callbackQueryId: string, text?: string): Promise<boolean> {
+    try {
+      const response = await fetch(`${this.apiBase}${this.botToken}/answerCallbackQuery`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          callback_query_id: callbackQueryId,
+          text: text || ''
+        })
+      });
+
+      return response.ok;
+    } catch (error) {
+      console.error('Error answering callback query:', error);
+      return false;
+    }
+  }
+
+  async forwardMessage(chatId: number | string, fromChatId: number | string, messageId: number): Promise<boolean> {
+    try {
+      const response = await fetch(`${this.apiBase}${this.botToken}/forwardMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          from_chat_id: fromChatId,
+          message_id: messageId
+        })
+      });
+
+      return response.ok;
+    } catch (error) {
+      console.error('Error forwarding message:', error);
+      return false;
+    }
+  }
+
+  async editMessageText(chatId: number | string, messageId: number, text: string): Promise<boolean> {
+    try {
+      const response = await fetch(`${this.apiBase}${this.botToken}/editMessageText`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          message_id: messageId,
+          text: text,
+          parse_mode: 'Markdown'
+        })
+      });
+
+      return response.ok;
+    } catch (error) {
+      console.error('Error editing message:', error);
       return false;
     }
   }
@@ -483,14 +591,5 @@ export class TelegramBot {
   // Отправка уведомления администратору
   async sendNotificationToAdmin(message: string): Promise<boolean> {
     return this.sendMessage(this.adminChatId, message);
-  }
-
-  private getStatusText(status: string): string {
-    switch (status) {
-      case 'pending': return 'На проверке ⏳';
-      case 'approved': return 'Одобрен ✅';
-      case 'rejected': return 'Отклонен ❌';
-      default: return 'Неизвестно';
-    }
   }
 } 

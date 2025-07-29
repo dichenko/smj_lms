@@ -438,4 +438,34 @@ export class DatabaseService {
       'DELETE FROM admin_sessions WHERE expires_at < ?'
     ).bind(now).run();
   }
+
+  // Дополнительные методы для бота (методы getStudentById и getLessonById уже существуют выше)
+
+  async updateReport(id: string, data: { status?: string; admin_comment?: string }): Promise<Report | null> {
+    const now = this.now();
+    const updates: string[] = [];
+    const values: any[] = [];
+
+    if (data.status !== undefined) {
+      updates.push('status = ?');
+      values.push(data.status);
+    }
+    if (data.admin_comment !== undefined) {
+      updates.push('admin_comment = ?');
+      values.push(data.admin_comment);
+    }
+
+    if (updates.length === 0) {
+      return this.getReportById(id);
+    }
+
+    updates.push('updated_at = ?');
+    values.push(now, id);
+
+    await this.db.prepare(
+      `UPDATE reports SET ${updates.join(', ')} WHERE id = ?`
+    ).bind(...values).run();
+
+    return this.getReportById(id);
+  }
 } 
