@@ -1044,6 +1044,19 @@
             font-weight: 500;
         }
 
+        .lesson-description-display {
+            font-style: italic;
+            color: #6c757d;
+            line-height: 1.4;
+            max-height: 100px;
+            overflow-y: auto;
+            padding: 0.5rem 0;
+            background: #f8f9fa;
+            padding: 0.75rem;
+            border-radius: 6px;
+            border-left: 3px solid #dee2e6;
+        }
+
         .lesson-status-display {
             padding: 0.4rem 0.8rem;
             border-radius: 6px;
@@ -1089,6 +1102,220 @@
             padding: 1rem;
             border-radius: 6px;
             font-style: italic;
+        }
+
+        /* Минималистичная таблица прогресса студентов */
+        .progress-table-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            overflow: hidden;
+            margin-top: 1.5rem;
+        }
+
+        .progress-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .progress-table thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .progress-table th {
+            padding: 1rem;
+            font-weight: 600;
+            text-align: left;
+            font-size: 13px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            border: none;
+        }
+
+        .sort-indicator {
+            font-size: 12px;
+            margin-left: 5px;
+            opacity: 0.7;
+        }
+
+        .progress-table .student-col {
+            width: 250px;
+            min-width: 250px;
+        }
+
+        .progress-table .progress-col {
+            width: 120px;
+            text-align: center;
+        }
+
+        .progress-table .courses-col {
+            flex: 1;
+        }
+
+        .progress-table tbody tr {
+            border-bottom: 1px solid #f1f3f4;
+            transition: all 0.2s ease;
+        }
+
+        .progress-table tbody tr:hover {
+            background: #f8f9ff;
+            transform: translateX(2px);
+        }
+
+        .progress-table tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .progress-table td {
+            padding: 1rem;
+            vertical-align: top;
+            border: none;
+        }
+
+        /* Информация о студенте */
+        .student-info-compact {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .student-name-compact {
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 15px;
+        }
+
+        .student-city-compact {
+            font-size: 12px;
+            color: #718096;
+        }
+
+        /* Общий прогресс */
+        .overall-progress-compact {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 16px;
+            color: #6c757d;
+            text-align: center;
+        }
+
+        .overall-progress-compact.zero {
+            color: #dc3545;
+        }
+
+        /* Курсы компактно */
+        .courses-compact {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .course-row-compact {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 3px solid #667eea;
+        }
+
+        .course-title-compact {
+            font-weight: 600;
+            color: #495057;
+            min-width: 140px;
+            font-size: 13px;
+        }
+
+        .course-progress-compact {
+            font-size: 11px;
+            color: #6c757d;
+            min-width: 35px;
+            text-align: right;
+        }
+
+        .course-progress-compact.zero {
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+        .lessons-compact {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            flex: 1;
+        }
+
+        .lesson-compact {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .lesson-compact.completed {
+            background: #28a745;
+            color: white;
+        }
+
+        .lesson-compact.approved {
+            background: #28a745;
+            color: white;
+        }
+
+        .lesson-compact.not_started {
+            background: #e9ecef;
+            color: #6c757d;
+        }
+
+        .lesson-compact:hover {
+            transform: scale(1.1);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .progress-table .student-col {
+                width: 200px;
+                min-width: 200px;
+            }
+            
+            .course-title-compact {
+                min-width: 120px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .progress-table-container {
+                margin: 0 -1rem;
+                border-radius: 0;
+            }
+            
+            .progress-table th,
+            .progress-table td {
+                padding: 0.75rem;
+            }
+            
+            .course-row-compact {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            
+            .lessons-compact {
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -1136,10 +1363,21 @@
                 </div>
             </div>
             
-            <div class="progress-page">
-                <div class="progress-grid" id="progressTableBody">
-                    <div class="loading">Загрузка данных...</div>
-                </div>
+            <div class="progress-table-container">
+                <table class="progress-table">
+                    <thead>
+                        <tr>
+                            <th class="student-col">Студент <span class="sort-indicator">🔤</span></th>
+                            <th class="progress-col">Общий прогресс</th>
+                            <th class="courses-col">Курсы и уроки</th>
+                        </tr>
+                    </thead>
+                    <tbody id="progressTableBody">
+                        <tr>
+                            <td colspan="3" class="loading">Загрузка данных...</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
@@ -1449,27 +1687,27 @@
                 updateProgressCityFilter();
             } catch (error) {
                 console.error('Error loading progress:', error);
-                const container = document.getElementById('progressTableBody');
-                if (container) {
-                    container.innerHTML = '<div class="error">Ошибка загрузки данных</div>';
+                const tbody = document.getElementById('progressTableBody');
+                if (tbody) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="error">Ошибка загрузки данных</td></tr>';
                 }
             }
         }
 
-        // Отображение прогресса студентов
+        // Отображение прогресса студентов в минималистичной таблице
         function renderProgressTable() {
-            const container = document.getElementById('progressTableBody');
+            const tbody = document.getElementById('progressTableBody');
             
             // Безопасная проверка элементов
-            if (!container) {
-                console.error('Progress table container not found');
+            if (!tbody) {
+                console.error('Progress table body not found');
                 return;
             }
 
             // Безопасная проверка данных
             if (!Array.isArray(progressData)) {
                 console.error('Progress data is not an array');
-                container.innerHTML = '<div class="error">Ошибка загрузки данных</div>';
+                tbody.innerHTML = '<tr><td colspan="3" class="error">Ошибка загрузки данных</td></tr>';
                 return;
             }
             
@@ -1496,15 +1734,29 @@
                 );
             }
             
+            // Сортировка по городу (всегда)
+            filteredData.sort((a, b) => {
+                const cityA = (a.city || '').toLowerCase();
+                const cityB = (b.city || '').toLowerCase();
+                
+                if (cityA < cityB) return -1;
+                if (cityA > cityB) return 1;
+                
+                // Если города одинаковые, сортируем по имени
+                const nameA = (a.name || '').toLowerCase();
+                const nameB = (b.name || '').toLowerCase();
+                return nameA.localeCompare(nameB);
+            });
+            
             // Проверка результатов фильтрации
             if (filteredData.length === 0) {
-                container.innerHTML = '<div class="loading">Студенты не найдены</div>';
+                tbody.innerHTML = '<tr><td colspan="3" class="loading">Студенты не найдены</td></tr>';
                 return;
             }
             
             // Генерация HTML с обработкой ошибок
             try {
-                const html = filteredData.map(student => {
+                const rows = filteredData.map(student => {
                     // Безопасная проверка данных студента
                     if (!student || !student.name) {
                         return '';
@@ -1534,25 +1786,24 @@
                                     const lessonStatus = lesson.status || 'not_started';
                                     const lessonOrder = lesson.order || '?';
                                     const lessonId = lesson.id || '';
+                                    const lessonDescription = lesson.description || '';
                                     const courseTitle = course.title || '';
                                     
                                     return `
-                                        <div class="lesson-number ${lessonStatus}" 
+                                        <div class="lesson-compact ${lessonStatus}" 
                                              title="${lessonTitle} - ${getLessonStatusText(lessonStatus)}"
-                                             onclick="showLessonModal('${lessonId}', '${lessonTitle}', '${courseTitle}', '${lessonOrder}', '${lessonStatus}')">
+                                             onclick="showLessonModal('${lessonId}', '${lessonTitle}', '${courseTitle}', '${lessonOrder}', '${lessonStatus}', '${lessonDescription}')">
                                             ${lessonOrder}
                                         </div>
                                     `;
                                 }).join('')
-                                : '<div class="no-lessons">Нет уроков</div>';
+                                : '<span class="no-lessons">Нет уроков</span>';
                             
                             return `
-                                <div class="course-card">
-                                    <div class="course-header">
-                                        <div class="course-title">${course.title}</div>
-                                        <div class="course-progress ${courseProgressClass}">${courseProgress}%</div>
-                                    </div>
-                                    <div class="lessons-container">
+                                <div class="course-row-compact">
+                                    <div class="course-title-compact">${course.title}</div>
+                                    <div class="course-progress-compact ${courseProgressClass}">${courseProgress}%</div>
+                                    <div class="lessons-compact">
                                         ${lessonsHtml}
                                     </div>
                                 </div>
@@ -1561,28 +1812,30 @@
                         : '<div class="no-courses">Нет курсов</div>';
                     
                     return `
-                        <div class="student-card">
-                            <div class="student-header">
-                                <div class="student-info">
-                                    <div class="student-name">${student.name}</div>
-                                    <div class="student-city">${student.city || 'Не указан'}</div>
+                        <tr>
+                            <td class="student-col">
+                                <div class="student-info-compact">
+                                    <div class="student-name-compact">${student.name}</div>
+                                    <div class="student-city-compact">${student.city || 'Не указан'}</div>
                                 </div>
-                                <div class="overall-progress ${overallProgressClass}">${overallProgress}%</div>
-                            </div>
-                            <div class="courses-section">
-                                <div class="courses-grid">
+                            </td>
+                            <td class="progress-col">
+                                <div class="overall-progress-compact ${overallProgressClass}">${overallProgress}%</div>
+                            </td>
+                            <td class="courses-col">
+                                <div class="courses-compact">
                                     ${coursesHtml}
                                 </div>
-                            </div>
-                        </div>
+                            </td>
+                        </tr>
                     `;
                 }).filter(html => html.trim() !== '').join('');
                 
-                container.innerHTML = html || '<div class="loading">Нет данных для отображения</div>';
+                tbody.innerHTML = rows || '<tr><td colspan="3" class="loading">Нет данных для отображения</td></tr>';
                 
             } catch (error) {
                 console.error('Error rendering progress table:', error);
-                container.innerHTML = '<div class="error">Ошибка отображения данных</div>';
+                tbody.innerHTML = '<tr><td colspan="3" class="error">Ошибка отображения данных</td></tr>';
             }
         }
 
@@ -2111,12 +2364,13 @@
         }
 
         // Показать модальное окно с информацией об уроке
-        function showLessonModal(lessonId, lessonTitle, courseTitle, lessonOrder, lessonStatus) {
+        function showLessonModal(lessonId, lessonTitle, courseTitle, lessonOrder, lessonStatus, lessonDescription) {
             const modal = document.getElementById('lessonModal');
             const content = modal.querySelector('.modal-content');
             
             const statusText = getLessonStatusText(lessonStatus);
             const statusClass = lessonStatus;
+            const description = lessonDescription || 'Описание не указано';
             
             content.innerHTML = `
                 <span class="close" onclick="closeModal('lessonModal')">&times;</span>
@@ -2133,6 +2387,10 @@
                     <div class="info-row">
                         <label>Курс:</label>
                         <span class="course-title-display">${courseTitle}</span>
+                    </div>
+                    <div class="info-row">
+                        <label>Описание:</label>
+                        <span class="lesson-description-display">${description}</span>
                     </div>
                     <div class="info-row">
                         <label>Статус:</label>
