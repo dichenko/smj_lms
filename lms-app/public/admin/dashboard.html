@@ -157,29 +157,93 @@
 
         .filters {
             display: flex;
-            gap: 1rem;
+            gap: 1.5rem;
             margin-bottom: 1.5rem;
             align-items: center;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            padding: 1.25rem;
+            border-radius: 12px;
+            border: 1px solid #e1e8ed;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
 
         .filter-group {
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
+            flex: 1;
         }
 
         .filter-group label {
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: #666;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #495057;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
         }
 
         .filter-group select,
         .filter-group input {
-            padding: 0.5rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 0.9rem;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .filter-group select:focus,
+        .filter-group input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .filter-group select:hover,
+        .filter-group input:hover {
+            border-color: #bdc3c7;
+        }
+
+        /* Стили для иконок в лейблах */
+        .filter-group label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Анимация для фильтров */
+        .filters {
+            animation: slideInUp 0.3s ease;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Стили для placeholder */
+        .filter-group input::placeholder {
+            color: #adb5bd;
+            font-style: italic;
+        }
+
+        /* Стили для select с кастомной стрелкой */
+        .filter-group select {
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23495057' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1rem;
+            padding-right: 2.5rem;
         }
 
         .table-container {
@@ -801,10 +865,16 @@
             </div>
             
             <div class="filters">
-                <select id="progressCityFilter" onchange="filterProgress()">
-                    <option value="">Все города</option>
-                </select>
-                <input type="text" id="progressSearchFilter" placeholder="Поиск по имени..." onkeyup="filterProgress()">
+                <div class="filter-group">
+                    <label>🏙️ Город</label>
+                    <select id="progressCityFilter" onchange="filterProgress()">
+                        <option value="">Все города</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>🔍 Поиск</label>
+                    <input type="text" id="progressSearchFilter" placeholder="Поиск по имени..." onkeyup="filterProgress()">
+                </div>
             </div>
             
             <div class="table-container">
@@ -833,13 +903,13 @@
 
             <div class="filters">
                 <div class="filter-group">
-                    <label>Фильтр по городу:</label>
+                    <label>🏙️ Город</label>
                     <select id="cityFilter" onchange="filterStudents()">
                         <option value="">Все города</option>
                     </select>
                 </div>
                 <div class="filter-group">
-                    <label>Поиск:</label>
+                    <label>🔍 Поиск</label>
                     <input type="text" id="searchFilter" placeholder="Имя студента..." onkeyup="filterStudents()">
                 </div>
             </div>
@@ -899,7 +969,7 @@
 
             <div class="filters">
                 <div class="filter-group">
-                    <label>Статус:</label>
+                    <label>📊 Статус</label>
                     <select id="statusFilter" onchange="filterReports()">
                         <option value="">Все статусы</option>
                         <option value="pending">На проверке</option>
@@ -908,7 +978,7 @@
                     </select>
                 </div>
                 <div class="filter-group">
-                    <label>Город:</label>
+                    <label>🏙️ Город</label>
                     <select id="reportCityFilter" onchange="filterReports()">
                         <option value="">Все города</option>
                     </select>
