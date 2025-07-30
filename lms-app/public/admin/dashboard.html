@@ -1390,6 +1390,7 @@
             <div class="nav-item active" onclick="showPage('progress')">Прогресс студентов</div>
             <div class="nav-item" onclick="showPage('students')">Управление студентами</div>
             <div class="nav-item" onclick="showPage('courses')">Курсы</div>
+            <div class="nav-item" onclick="showPage('lessons')">Уроки</div>
             <div class="nav-item" onclick="showPage('reports')">Отчеты</div>
             <div class="nav-item" onclick="showPage('logs')">Логи</div>
         </div>
@@ -1497,6 +1498,47 @@
                     <tbody id="coursesTableBody">
                         <tr>
                             <td colspan="5" class="loading">Загрузка...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Страница уроков -->
+        <div id="lessons-page" class="page" style="display: none;">
+            <div class="page-header">
+                <h2 class="page-title">📚 Управление уроками</h2>
+                <button class="btn" onclick="showAddLessonModal()">➕ Добавить урок</button>
+            </div>
+
+            <div class="filters">
+                <div class="filter-group">
+                    <label>📖 Курс</label>
+                    <select id="lessonCourseFilter" onchange="filterLessons()">
+                        <option value="">Все курсы</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>🔍 Поиск</label>
+                    <input type="text" id="lessonSearchFilter" placeholder="Название урока..." onkeyup="filterLessons()">
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table id="lessonsTable">
+                    <thead>
+                        <tr>
+                            <th>№</th>
+                            <th>Название</th>
+                            <th>Курс</th>
+                            <th>Описание</th>
+                            <th>Создан</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lessonsTableBody">
+                        <tr>
+                            <td colspan="6" class="loading">Загрузка...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -1657,10 +1699,84 @@
         </div>
     </div>
 
+    <!-- Модальное окно добавления урока -->
+    <div id="addLessonModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('addLessonModal')">&times;</span>
+            <h3>➕ Добавить урок</h3>
+            <form id="addLessonForm">
+                <div class="form-group">
+                    <label>Курс:</label>
+                    <select id="lessonCourseSelect" required>
+                        <option value="">Выберите курс</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Номер урока:</label>
+                    <input type="number" id="lessonOrderNum" required min="1" placeholder="1">
+                </div>
+                <div class="form-group">
+                    <label>Название урока:</label>
+                    <input type="text" id="lessonTitle" required placeholder="Введение в основы">
+                </div>
+                <div class="form-group">
+                    <label>Описание:</label>
+                    <textarea id="lessonDescription" placeholder="Краткое описание урока..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Содержание урока:</label>
+                    <textarea id="lessonContent" required placeholder="Подробное содержание урока..."></textarea>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn">➕ Создать урок</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addLessonModal')">Отмена</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модальное окно редактирования урока -->
+    <div id="editLessonModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('editLessonModal')">&times;</span>
+            <h3>✏️ Редактировать урок</h3>
+            <form id="editLessonForm">
+                <input type="hidden" id="editLessonId">
+                <div class="form-group">
+                    <label>Курс:</label>
+                    <select id="editLessonCourseSelect" required>
+                        <option value="">Выберите курс</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Номер урока:</label>
+                    <input type="number" id="editLessonOrderNum" required min="1">
+                </div>
+                <div class="form-group">
+                    <label>Название урока:</label>
+                    <input type="text" id="editLessonTitle" required>
+                </div>
+                <div class="form-group">
+                    <label>Описание:</label>
+                    <textarea id="editLessonDescription"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Содержание урока:</label>
+                    <textarea id="editLessonContent" required></textarea>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn">💾 Сохранить изменения</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('editLessonModal')">Отмена</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         let currentPage = 'progress';
         let students = [];
         let courses = [];
+        let lessons = [];
         let reports = [];
         let logs = [];
         let progressData = [];
@@ -1717,6 +1833,9 @@
                     break;
                 case 'courses':
                     loadCourses();
+                    break;
+                case 'lessons':
+                    loadLessons();
                     break;
                 case 'reports':
                     loadReports();
@@ -2098,6 +2217,231 @@
                     </td>
                 </tr>
             `).join('');
+        }
+
+        // Загрузка уроков
+        async function loadLessons() {
+            try {
+                // Сначала загружаем все курсы, чтобы получить уроки каждого курса
+                if (courses.length === 0) {
+                    await loadCourses();
+                }
+
+                // Собираем все уроки из всех курсов
+                lessons = [];
+                for (const course of courses) {
+                    if (course.lessons && course.lessons.length > 0) {
+                        course.lessons.forEach(lesson => {
+                            lessons.push({
+                                ...lesson,
+                                course_title: course.title,
+                                course_id: course.id
+                            });
+                        });
+                    }
+                }
+                
+                // Сортируем уроки по курсу, затем по номеру урока
+                lessons.sort((a, b) => {
+                    if (a.course_title !== b.course_title) {
+                        return a.course_title.localeCompare(b.course_title);
+                    }
+                    return (a.order_num || 0) - (b.order_num || 0);
+                });
+
+                renderLessonsTable();
+                updateLessonCourseFilter();
+            } catch (error) {
+                console.error('Error loading lessons:', error);
+                document.getElementById('lessonsTableBody').innerHTML = 
+                    '<tr><td colspan="6" class="error">Ошибка загрузки данных</td></tr>';
+            }
+        }
+
+        // Отображение таблицы уроков
+        function renderLessonsTable() {
+            const tbody = document.getElementById('lessonsTableBody');
+            const courseFilter = document.getElementById('lessonCourseFilter').value;
+            const searchFilter = document.getElementById('lessonSearchFilter').value.toLowerCase();
+            
+            let filteredLessons = lessons;
+            
+            if (courseFilter) {
+                filteredLessons = filteredLessons.filter(l => l.course_id === courseFilter);
+            }
+            
+            if (searchFilter) {
+                filteredLessons = filteredLessons.filter(l => 
+                    l.title.toLowerCase().includes(searchFilter)
+                );
+            }
+            
+            if (filteredLessons.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="loading">Уроки не найдены</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = filteredLessons.map(lesson => `
+                <tr>
+                    <td><strong>${lesson.order_num || '-'}</strong></td>
+                    <td>${lesson.title}</td>
+                    <td><span class="course-badge">${lesson.course_title}</span></td>
+                    <td>${lesson.description ? (lesson.description.length > 50 ? lesson.description.substring(0, 50) + '...' : lesson.description) : '-'}</td>
+                    <td>${lesson.created_at ? new Date(lesson.created_at).toLocaleDateString() : '-'}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-icon btn-edit" onclick="editLesson('${lesson.id}')" title="Редактировать">✏️</button>
+                            <button class="btn btn-icon btn-delete" onclick="deleteLesson('${lesson.id}')" title="Удалить">🗑️</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Обновление фильтра курсов для уроков
+        function updateLessonCourseFilter() {
+            const uniqueCourses = [...new Set(lessons.map(l => ({ id: l.course_id, title: l.course_title })))];
+            const select = document.getElementById('lessonCourseFilter');
+            
+            select.innerHTML = '<option value="">Все курсы</option>' +
+                uniqueCourses.map(course => `<option value="${course.id}">${course.title}</option>`).join('');
+        }
+
+        // Фильтрация уроков
+        function filterLessons() {
+            renderLessonsTable();
+        }
+
+        // Показать модальное окно добавления урока
+        async function showAddLessonModal() {
+            // Загружаем курсы для выбора
+            if (courses.length === 0) {
+                await loadCourses();
+            }
+            
+            const courseSelect = document.getElementById('lessonCourseSelect');
+            courseSelect.innerHTML = '<option value="">Выберите курс</option>' +
+                courses.map(course => `<option value="${course.id}">${course.title}</option>`).join('');
+            
+            document.getElementById('addLessonModal').style.display = 'block';
+        }
+
+        // Добавление урока
+        async function addLesson(event) {
+            event.preventDefault();
+            
+            const formData = {
+                title: document.getElementById('lessonTitle').value,
+                description: document.getElementById('lessonDescription').value,
+                content: document.getElementById('lessonContent').value,
+                order_num: parseInt(document.getElementById('lessonOrderNum').value)
+            };
+            
+            const courseId = document.getElementById('lessonCourseSelect').value;
+            
+            try {
+                const response = await fetch(`/api/courses/${courseId}/lessons`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(formData)
+                });
+                
+                if (!response.ok) throw new Error('Failed to add lesson');
+                
+                closeModal('addLessonModal');
+                document.getElementById('addLessonForm').reset();
+                loadLessons();
+                
+                showMessage('Урок успешно добавлен', 'success');
+            } catch (error) {
+                console.error('Error adding lesson:', error);
+                showMessage('Ошибка при добавлении урока', 'error');
+            }
+        }
+
+        // Редактирование урока
+        async function editLesson(lessonId) {
+            const lesson = lessons.find(l => l.id === lessonId);
+            if (!lesson) return;
+            
+            // Заполняем форму данными урока
+            document.getElementById('editLessonId').value = lesson.id;
+            document.getElementById('editLessonTitle').value = lesson.title;
+            document.getElementById('editLessonDescription').value = lesson.description || '';
+            document.getElementById('editLessonContent').value = lesson.content || '';
+            document.getElementById('editLessonOrderNum').value = lesson.order_num || 1;
+            
+            // Загружаем курсы для выбора
+            if (courses.length === 0) {
+                await loadCourses();
+            }
+            
+            const courseSelect = document.getElementById('editLessonCourseSelect');
+            courseSelect.innerHTML = '<option value="">Выберите курс</option>' +
+                courses.map(course => `<option value="${course.id}" ${course.id === lesson.course_id ? 'selected' : ''}>${course.title}</option>`).join('');
+            
+            document.getElementById('editLessonModal').style.display = 'block';
+        }
+
+        // Обновление урока
+        async function updateLesson(event) {
+            event.preventDefault();
+            
+            const lessonId = document.getElementById('editLessonId').value;
+            const formData = {
+                title: document.getElementById('editLessonTitle').value,
+                description: document.getElementById('editLessonDescription').value,
+                content: document.getElementById('editLessonContent').value,
+                order_num: parseInt(document.getElementById('editLessonOrderNum').value),
+                course_id: document.getElementById('editLessonCourseSelect').value
+            };
+            
+            try {
+                const response = await fetch(`/api/lessons/${lessonId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(formData)
+                });
+                
+                if (!response.ok) throw new Error('Failed to update lesson');
+                
+                closeModal('editLessonModal');
+                loadLessons();
+                
+                showMessage('Урок успешно обновлен', 'success');
+            } catch (error) {
+                console.error('Error updating lesson:', error);
+                showMessage('Ошибка при обновлении урока', 'error');
+            }
+        }
+
+        // Удаление урока
+        async function deleteLesson(lessonId) {
+            const lesson = lessons.find(l => l.id === lessonId);
+            if (!lesson) return;
+            
+            if (!confirm(`Удалить урок "${lesson.title}"?`)) return;
+            
+            try {
+                const response = await fetch(`/api/lessons/${lessonId}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) throw new Error('Failed to delete lesson');
+                
+                loadLessons();
+                showMessage('Урок удален', 'success');
+            } catch (error) {
+                console.error('Error deleting lesson:', error);
+                showMessage('Ошибка при удалении урока', 'error');
+            }
         }
 
         // Загрузка отчетов
@@ -2564,6 +2908,8 @@
             // Обработчики форм
             document.getElementById('addStudentForm').addEventListener('submit', addStudent);
             document.getElementById('editStudentForm').addEventListener('submit', updateStudent);
+            document.getElementById('addLessonForm').addEventListener('submit', addLesson);
+            document.getElementById('editLessonForm').addEventListener('submit', updateLesson);
             
             // Инициализация кнопки очистки поиска
             updateClearButton();
