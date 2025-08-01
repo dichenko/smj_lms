@@ -1,0 +1,429 @@
+/* Специфичные стили для отдельных страниц */
+
+/* Страница прогресса студентов */
+.progress-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+}
+
+.student-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e9ecef;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.student-card:hover {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+}
+
+.student-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.student-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.student-name {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: white;
+    margin: 0;
+}
+
+.student-city {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.overall-progress {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 1rem;
+    font-weight: 600;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.overall-progress.zero {
+    background: rgba(231, 76, 60, 0.9);
+}
+
+.courses-section {
+    padding: 1.5rem;
+}
+
+.courses-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.course-card {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 1.25rem;
+    border: 1px solid #e9ecef;
+    transition: all 0.2s ease;
+}
+
+.course-card:hover {
+    background: #e9ecef;
+    transform: translateX(4px);
+}
+
+.course-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.course-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.course-progress {
+    background: #6c757d;
+    color: white;
+    padding: 0.4rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.course-progress.zero {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+}
+
+.lessons-container {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.lesson-number {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+    position: relative;
+}
+
+.lesson-number:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.lesson-number.approved {
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+    color: white;
+    border-color: #27ae60;
+}
+
+.lesson-number.pending {
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+    color: white;
+    border-color: #e67e22;
+}
+
+.lesson-number.rejected {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+    border-color: #c0392b;
+}
+
+.lessons-row {
+    display: flex;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 0.5rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.lesson-number {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+    position: relative;
+}
+
+.lesson-number:hover {
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.lesson-number.approved {
+    background: #d4edda;
+    color: #155724;
+    border-color: #c3e6cb;
+}
+
+.lesson-number.pending {
+    background: #fff3cd;
+    color: #856404;
+    border-color: #ffeaa7;
+}
+
+.lesson-number.rejected {
+    background: #f8d7da;
+    color: #721c24;
+    border-color: #f5c6cb;
+}
+
+.lesson-number.not_started {
+    background: #e9ecef;
+    color: #6c757d;
+    border-color: #ced4da;
+}
+
+/* Минималистичная таблица прогресса студентов */
+.progress-table-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    overflow: hidden;
+    margin-top: 1.5rem;
+}
+
+.progress-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.progress-table thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.progress-table th {
+    padding: 1rem;
+    font-weight: 600;
+    text-align: left;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    border: none;
+}
+
+.sort-indicator {
+    font-size: 12px;
+    margin-left: 5px;
+    opacity: 0.7;
+}
+
+.progress-table .student-col {
+    width: 250px;
+    min-width: 250px;
+}
+
+.progress-table .progress-col {
+    width: 120px;
+    text-align: center;
+}
+
+.progress-table .courses-col {
+    flex: 1;
+}
+
+.progress-table tbody tr {
+    border-bottom: 1px solid #f1f3f4;
+    transition: all 0.2s ease;
+}
+
+.progress-table tbody tr:hover {
+    background: #f8f9ff;
+    transform: translateX(2px);
+}
+
+.progress-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.progress-table td {
+    padding: 1rem;
+    vertical-align: top;
+    border: none;
+}
+
+/* Информация о студенте */
+.student-info-compact {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.student-name-compact {
+    font-weight: 600;
+    color: #2d3748;
+    font-size: 15px;
+}
+
+.student-city-compact {
+    font-size: 12px;
+    color: #718096;
+}
+
+/* Общий прогресс */
+.overall-progress-compact {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 16px;
+    color: #6c757d;
+    text-align: center;
+}
+
+.overall-progress-compact.zero {
+    color: #dc3545;
+}
+
+/* Курсы компактно */
+.courses-compact {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.course-row-compact {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 3px solid #667eea;
+}
+
+.course-title-compact {
+    font-weight: 600;
+    color: #495057;
+    min-width: 140px;
+    font-size: 13px;
+}
+
+.course-progress-compact {
+    font-size: 11px;
+    color: #6c757d;
+    min-width: 35px;
+    text-align: right;
+}
+
+.course-progress-compact.zero {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+.lessons-compact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    flex: 1;
+}
+
+.lesson-compact {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.lesson-compact.completed {
+    background: #28a745;
+    color: white;
+}
+
+.lesson-compact.approved {
+    background: #28a745;
+    color: white;
+}
+
+.lesson-compact.not_started {
+    background: #e9ecef;
+    color: #6c757d;
+}
+
+.lesson-compact:hover {
+    transform: scale(1.1);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .progress-table .student-col {
+        width: 200px;
+        min-width: 200px;
+    }
+    
+    .course-title-compact {
+        min-width: 120px;
+    }
+}
+
+@media (max-width: 768px) {
+    .progress-table-container {
+        margin: 0 -1rem;
+        border-radius: 0;
+    }
+    
+    .progress-table th,
+    .progress-table td {
+        padding: 0.75rem;
+    }
+    
+    .course-row-compact {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .lessons-compact {
+        width: 100%;
+    }
+}

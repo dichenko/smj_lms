@@ -1,0 +1,418 @@
+/* Модальные окна и их компоненты */
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+    background-color: white;
+    margin: 5% auto;
+    padding: 2rem;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideIn 0.3s ease;
+}
+
+.close {
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #666;
+}
+
+.close:hover {
+    color: #333;
+}
+
+/* Стили для модального окна добавления студента */
+.modal-content h3 {
+    color: #2c3e50;
+    margin-bottom: 0.75rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 0.3rem;
+}
+
+.form-group {
+    margin-bottom: 0.75rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.4rem;
+    font-weight: 600;
+    color: #34495e;
+    font-size: 0.9rem;
+}
+
+.form-group input[type="text"] {
+    width: 100%;
+    padding: 0.5rem;
+    border: 2px solid #e1e8ed;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+}
+
+.form-group input[type="text"]:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+/* Стили для чекбоксов курсов */
+#courseCheckboxes {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.course-checkbox-item {
+    margin-bottom: 0;
+}
+
+.course-checkbox-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    user-select: none;
+    background: white;
+    border: 2px solid #e1e8ed;
+    width: 100%;
+}
+
+.course-checkbox-label:hover {
+    background: rgba(52, 152, 219, 0.05);
+    border-color: #3498db;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.1);
+}
+
+.course-checkbox {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #bdc3c7;
+    border-radius: 4px;
+    margin-right: 0.5rem;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.course-checkbox:checked {
+    background: #3498db;
+    border-color: #3498db;
+}
+
+.course-checkbox:checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.course-checkbox:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+}
+
+.course-checkbox-text {
+    font-size: 0.95rem;
+    color: #2c3e50;
+    font-weight: 500;
+    line-height: 1.3;
+    flex: 1;
+}
+
+/* Стили для кнопок в модальном окне */
+.modal-content .form-group:last-child {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 1rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid #e1e8ed;
+}
+
+.modal-content .btn {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    min-width: 120px;
+}
+
+.modal-content .btn:not(.btn-secondary) {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    border: none;
+    color: white;
+}
+
+.modal-content .btn:not(.btn-secondary):hover {
+    background: linear-gradient(135deg, #2980b9, #1f5f8b);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+}
+
+.modal-content .btn-secondary {
+    background: #95a5a6;
+    border: none;
+    color: white;
+}
+
+.modal-content .btn-secondary:hover {
+    background: #7f8c8d;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(149, 165, 166, 0.3);
+}
+
+/* Стили для модального окна управления курсами */
+.current-courses-list {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 2px solid #e1e8ed;
+    border-radius: 8px;
+    padding: 1rem;
+    background: #f8f9fa;
+}
+
+.current-course-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    background: white;
+    border: 1px solid #e1e8ed;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.current-course-item:last-child {
+    margin-bottom: 0;
+}
+
+.current-course-item:hover {
+    border-color: #3498db;
+    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.1);
+}
+
+.course-name {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 1rem;
+}
+
+.course-select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #e1e8ed;
+    border-radius: 8px;
+    font-size: 1rem;
+    background: white;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+}
+
+.course-select:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.btn-icon {
+    margin-right: 0.5rem;
+    font-weight: bold;
+}
+
+.btn-sm.btn-danger {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    border: none;
+    color: white;
+    transition: all 0.3s ease;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    border-radius: 6px;
+}
+
+.btn-sm.btn-danger:hover {
+    background: linear-gradient(135deg, #c0392b, #a93226);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+}
+
+.btn-sm.btn-primary {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    border: none;
+    color: white;
+    transition: all 0.3s ease;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    border-radius: 6px;
+}
+
+.btn-sm.btn-primary:hover {
+    background: linear-gradient(135deg, #2980b9, #1f5f8b);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+}
+
+/* Стили для модального окна урока */
+.lesson-info {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-row label {
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.95rem;
+}
+
+.lesson-number-display {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.lesson-title-display {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 1rem;
+}
+
+.course-title-display {
+    color: #495057;
+    font-weight: 500;
+}
+
+.lesson-description-display {
+    font-style: italic;
+    color: #6c757d;
+    line-height: 1.4;
+    max-height: 100px;
+    overflow-y: auto;
+    padding: 0.5rem 0;
+    background: #f8f9fa;
+    padding: 0.75rem;
+    border-radius: 6px;
+    border-left: 3px solid #dee2e6;
+}
+
+.lesson-status-display {
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.lesson-status-display.approved {
+    background: #d4edda;
+    color: #155724;
+}
+
+.lesson-status-display.pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.lesson-status-display.rejected {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.lesson-status-display.not_started {
+    background: #e9ecef;
+    color: #6c757d;
+}
+
+/* Минималистичные кнопки курсов в модальном окне редактирования */
+#editCourseCheckboxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.course-toggle-btn {
+    padding: 8px 16px;
+    border: 2px solid #e9ecef;
+    border-radius: 20px;
+    background: white;
+    color: #6c757d;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.course-toggle-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.course-toggle-btn.enrolled {
+    border-color: #28a745;
+    background: #28a745;
+    color: white;
+}
+
+.course-toggle-btn.enrolled:hover {
+    background: #218838;
+    border-color: #218838;
+}
+
+.course-toggle-btn.not-enrolled {
+    border-color: #dc3545;
+    color: #dc3545;
+}
+
+.course-toggle-btn.not-enrolled:hover {
+    background: #dc3545;
+    color: white;
+}
