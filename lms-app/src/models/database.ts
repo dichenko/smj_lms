@@ -134,7 +134,6 @@ export interface UpdateLesson {
   title?: string;
   order_num?: number;
   content?: string;
-  course_id?: string;
 }
 
 // Response types with relationships

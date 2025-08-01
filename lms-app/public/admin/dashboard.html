@@ -2433,8 +2433,6 @@
         async function updateLesson(event) {
             event.preventDefault();
             
-            console.log('🔧 updateLesson called');
-            
             const lessonId = document.getElementById('editLessonId').value;
             const formData = {
                 course_id: document.getElementById('editLessonCourse').value,
@@ -2443,22 +2441,7 @@
                 content: document.getElementById('editLessonContent').value
             };
             
-            console.log('📝 Update data:', { lessonId, formData });
-            
-            // Проверяем, что все поля заполнены
-            if (!lessonId) {
-                showMessage('Ошибка: ID урока не найден', 'error');
-                return;
-            }
-            
-            if (!formData.course_id || !formData.title || !formData.content) {
-                showMessage('Ошибка: Заполните все обязательные поля', 'error');
-                return;
-            }
-            
             try {
-                console.log(`🌐 Sending PUT request to /api/lessons/${lessonId}`);
-                
                 const response = await fetch(`/api/lessons/${lessonId}`, {
                     method: 'PUT',
                     headers: {
@@ -2468,10 +2451,7 @@
                     body: JSON.stringify(formData)
                 });
                 
-                console.log('📡 Response status:', response.status);
-                
                 const result = await response.json();
-                console.log('📋 Response data:', result);
                 
                 if (!response.ok) {
                     throw new Error(result.error || 'Failed to update lesson');
@@ -2484,7 +2464,7 @@
                 
                 showMessage('Урок успешно обновлен', 'success');
             } catch (error) {
-                console.error('❌ Error updating lesson:', error);
+                console.error('Error updating lesson:', error);
                 showMessage(`Ошибка при обновлении урока: ${error.message}`, 'error');
             }
         }
@@ -2985,6 +2965,6 @@
             // Инициализация кнопки очистки поиска
             updateClearButton();
         });
-    </script>
+    </script> 
 </body>
 </html> 
