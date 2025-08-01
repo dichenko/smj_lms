@@ -246,7 +246,7 @@ export class TelegramBot {
       context: { hasSeenWelcome: true }
     });
 
-    const message = `👋 **Добро пожаловать, ${telegramName}!**\n\n` +
+    const message = `👋 **Привет, ${telegramName}!**\n\n` +
                    `🎓 Добро пожаловать в SMJ LMS!\n` +
                    `📚 Готовы начать обучение?`;
 

@@ -278,6 +278,11 @@ export class DatabaseService {
       updates.push('content = ?');
       values.push(data.content);
     }
+    // Добавляем поддержку course_id
+    if (data.course_id !== undefined) {
+      updates.push('course_id = ?');
+      values.push(data.course_id);
+    }
 
     if (updates.length === 0) {
       return this.getLessonById(id);
