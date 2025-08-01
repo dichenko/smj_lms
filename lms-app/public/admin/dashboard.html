@@ -2214,38 +2214,70 @@
         // Загрузка уроков
         async function loadLessons() {
             try {
+                document.getElementById('lessonsTableBody').innerHTML = 
+                    '<tr><td colspan="6" class="loading">Загрузка данных...</td></tr>';
+                
                 const response = await fetch('/api/lessons', {
                     credentials: 'include'
                 });
                 
-                if (!response.ok) throw new Error('Failed to load lessons');
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to load lessons');
+                }
                 
                 const data = await response.json();
                 lessons = data.lessons || [];
+                
+                console.log('Loaded lessons:', lessons.length);
+                
                 renderLessonsTable();
                 updateLessonCourseFilter();
+                
             } catch (error) {
                 console.error('Error loading lessons:', error);
+                lessons = [];
                 document.getElementById('lessonsTableBody').innerHTML = 
-                    '<tr><td colspan="6" class="error">Ошибка загрузки данных</td></tr>';
+                    `<tr><td colspan="6" class="error">Ошибка загрузки данных: ${error.message}</td></tr>`;
+                updateLessonCourseFilter(); // Обновляем фильтр даже при ошибке
             }
         }
 
         // Отображение таблицы уроков
         function renderLessonsTable() {
             const tbody = document.getElementById('lessonsTableBody');
-            const courseFilter = document.getElementById('lessonCourseFilter').value;
-            const searchFilter = document.getElementById('lessonSearchFilter').value.toLowerCase();
+            
+            if (!tbody) {
+                console.error('Lessons table body not found');
+                return;
+            }
+
+            // Проверяем элементы фильтров
+            const courseFilterEl = document.getElementById('lessonCourseFilter');
+            const searchFilterEl = document.getElementById('lessonSearchFilter');
+            
+            const courseFilter = courseFilterEl ? courseFilterEl.value : '';
+            const searchFilter = searchFilterEl ? searchFilterEl.value.toLowerCase() : '';
+            
+            // Безопасная проверка lessons
+            if (!Array.isArray(lessons)) {
+                tbody.innerHTML = '<tr><td colspan="6" class="error">Ошибка: данные уроков некорректны</td></tr>';
+                return;
+            }
             
             let filteredLessons = lessons;
             
+            // Фильтрация по курсу
             if (courseFilter) {
-                filteredLessons = filteredLessons.filter(l => l.course.id === courseFilter);
+                filteredLessons = filteredLessons.filter(l => 
+                    l && l.course && l.course.id === courseFilter
+                );
             }
             
+            // Фильтрация по поиску
             if (searchFilter) {
                 filteredLessons = filteredLessons.filter(l => 
-                    l.title.toLowerCase().includes(searchFilter)
+                    l && l.title && l.title.toLowerCase().includes(searchFilter)
                 );
             }
             
@@ -2254,36 +2286,55 @@
                 return;
             }
             
-            tbody.innerHTML = filteredLessons.map(lesson => `
-                <tr>
-                    <td>
-                        <span class="course-badge">${lesson.course.title}</span>
-                    </td>
-                    <td>
-                        <strong style="font-size: 1.1em; color: #667eea;">${lesson.order_num}</strong>
-                    </td>
-                    <td>
-                        <strong>${lesson.title}</strong>
-                    </td>
-                    <td>
-                        <div style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${lesson.content}">
-                            ${lesson.content}
-                        </div>
-                    </td>
-                    <td>${new Date(lesson.created_at).toLocaleDateString()}</td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="btn btn-icon btn-edit" onclick="editLesson('${lesson.id}')" title="Редактировать">✏️</button>
-                            <button class="btn btn-icon btn-delete" onclick="deleteLesson('${lesson.id}')" title="Удалить">✕</button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
+            try {
+                tbody.innerHTML = filteredLessons.map(lesson => {
+                    if (!lesson || !lesson.course) return '';
+                    
+                    return `
+                        <tr>
+                            <td>
+                                <span class="course-badge">${lesson.course.title || 'Без названия'}</span>
+                            </td>
+                            <td>
+                                <strong style="font-size: 1.1em; color: #667eea;">${lesson.order_num || '?'}</strong>
+                            </td>
+                            <td>
+                                <strong>${lesson.title || 'Без названия'}</strong>
+                            </td>
+                            <td>
+                                <div style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${lesson.content || ''}">
+                                    ${lesson.content || 'Нет описания'}
+                                </div>
+                            </td>
+                            <td>${lesson.created_at ? new Date(lesson.created_at).toLocaleDateString() : 'Неизвестно'}</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn btn-icon btn-edit" onclick="editLesson('${lesson.id}')" title="Редактировать">✏️</button>
+                                    <button class="btn btn-icon btn-delete" onclick="deleteLesson('${lesson.id}')" title="Удалить">✕</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).filter(html => html.trim() !== '').join('');
+                
+            } catch (error) {
+                console.error('Error rendering lessons table:', error);
+                tbody.innerHTML = '<tr><td colspan="6" class="error">Ошибка отображения данных</td></tr>';
+            }
         }
 
         // Обновление фильтра курсов для уроков
         function updateLessonCourseFilter() {
-            const courses = [...new Set(lessons.map(l => l.course))];
+            // Создаем Map для уникальных курсов по ID
+            const uniqueCourses = new Map();
+            lessons.forEach(lesson => {
+                if (lesson.course && lesson.course.id) {
+                    uniqueCourses.set(lesson.course.id, lesson.course);
+                }
+            });
+            
+            // Преобразуем в массив и сортируем по названию
+            const courses = Array.from(uniqueCourses.values()).sort((a, b) => a.title.localeCompare(b.title));
             const select = document.getElementById('lessonCourseFilter');
             
             select.innerHTML = '<option value="">Все курсы</option>' +
@@ -2333,16 +2384,22 @@
                     body: JSON.stringify(formData)
                 });
                 
-                if (!response.ok) throw new Error('Failed to add lesson');
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.error || 'Failed to add lesson');
+                }
                 
                 closeModal('addLessonModal');
                 document.getElementById('addLessonForm').reset();
-                loadLessons();
+                
+                // Принудительно обновляем список уроков
+                await loadLessons();
                 
                 showMessage('Урок успешно добавлен', 'success');
             } catch (error) {
                 console.error('Error adding lesson:', error);
-                showMessage('Ошибка при добавлении урока', 'error');
+                showMessage(`Ошибка при добавлении урока: ${error.message}`, 'error');
             }
         }
 
@@ -2394,15 +2451,21 @@
                     body: JSON.stringify(formData)
                 });
                 
-                if (!response.ok) throw new Error('Failed to update lesson');
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.error || 'Failed to update lesson');
+                }
                 
                 closeModal('editLessonModal');
-                loadLessons();
+                
+                // Принудительно обновляем список уроков
+                await loadLessons();
                 
                 showMessage('Урок успешно обновлен', 'success');
             } catch (error) {
                 console.error('Error updating lesson:', error);
-                showMessage('Ошибка при обновлении урока', 'error');
+                showMessage(`Ошибка при обновлении урока: ${error.message}`, 'error');
             }
         }
 
@@ -2416,13 +2479,19 @@
                     credentials: 'include'
                 });
                 
-                if (!response.ok) throw new Error('Failed to delete lesson');
+                const result = await response.json();
                 
-                loadLessons();
+                if (!response.ok) {
+                    throw new Error(result.error || 'Failed to delete lesson');
+                }
+                
+                // Принудительно обновляем список уроков
+                await loadLessons();
+                
                 showMessage('Урок удален', 'success');
             } catch (error) {
                 console.error('Error deleting lesson:', error);
-                showMessage('Ошибка при удалении урока', 'error');
+                showMessage(`Ошибка при удалении урока: ${error.message}`, 'error');
             }
         }
 
