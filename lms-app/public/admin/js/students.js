@@ -105,6 +105,11 @@ window.StudentsPage = {
             document.getElementById('addStudentForm').reset();
             this.load();
             
+            // Обновляем страницу прогресса, если она активна
+            if (window.App.currentPage === 'progress' && window.ProgressPage) {
+                window.ProgressPage.load();
+            }
+            
             window.Utils.showMessage('Студент успешно добавлен', 'success');
         } catch (error) {
             console.error('Error adding student:', error);
@@ -143,6 +148,12 @@ window.StudentsPage = {
             
             window.Modals.close('editStudentModal');
             this.load();
+            
+            // Обновляем страницу прогресса, если она активна
+            if (window.App.currentPage === 'progress' && window.ProgressPage) {
+                window.ProgressPage.load();
+            }
+            
             window.Utils.showMessage('Студент успешно обновлен', 'success');
         } catch (error) {
             console.error('Error updating student:', error);
@@ -168,6 +179,12 @@ window.StudentsPage = {
             
             this.load();
             this.manageCourses(studentId); // Обновляем модальное окно
+            
+            // Обновляем страницу прогресса, если она активна
+            if (window.App.currentPage === 'progress' && window.ProgressPage) {
+                window.ProgressPage.load();
+            }
+            
             window.Utils.showMessage('Студент зачислен на курс', 'success');
         } catch (error) {
             console.error('Error enrolling student:', error);
@@ -184,6 +201,12 @@ window.StudentsPage = {
             
             this.load();
             this.manageCourses(studentId); // Обновляем модальное окно
+            
+            // Обновляем страницу прогресса, если она активна
+            if (window.App.currentPage === 'progress' && window.ProgressPage) {
+                window.ProgressPage.load();
+            }
+            
             window.Utils.showMessage('Студент отчислен с курса', 'success');
         } catch (error) {
             console.error('Error unenrolling student:', error);
@@ -199,6 +222,12 @@ window.StudentsPage = {
             await window.API.students.delete(studentId);
             
             this.load();
+            
+            // Обновляем страницу прогресса, если она активна
+            if (window.App.currentPage === 'progress' && window.ProgressPage) {
+                window.ProgressPage.load();
+            }
+            
             window.Utils.showMessage('Студент удален', 'success');
         } catch (error) {
             console.error('Error deleting student:', error);

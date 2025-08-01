@@ -142,6 +142,11 @@ window.LessonsPage = {
             
             await this.load();
             
+            // Обновляем страницу прогресса, если она активна
+            if (window.App.currentPage === 'progress' && window.ProgressPage) {
+                window.ProgressPage.load();
+            }
+            
             window.Utils.showMessage('Урок успешно добавлен', 'success');
         } catch (error) {
             console.error('Error adding lesson:', error);
@@ -176,6 +181,11 @@ window.LessonsPage = {
             
             await this.load();
             
+            // Обновляем страницу прогресса, если она активна
+            if (window.App.currentPage === 'progress' && window.ProgressPage) {
+                window.ProgressPage.load();
+            }
+            
             window.Utils.showMessage('Урок успешно обновлен', 'success');
         } catch (error) {
             console.error('Error updating lesson:', error);
@@ -191,6 +201,11 @@ window.LessonsPage = {
             await window.API.lessons.delete(lessonId);
             
             await this.load();
+            
+            // Обновляем страницу прогресса, если она активна
+            if (window.App.currentPage === 'progress' && window.ProgressPage) {
+                window.ProgressPage.load();
+            }
             
             window.Utils.showMessage('Урок удален', 'success');
         } catch (error) {

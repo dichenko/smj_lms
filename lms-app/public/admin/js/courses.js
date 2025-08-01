@@ -61,6 +61,11 @@ window.CoursesPage = {
             document.getElementById('addCourseForm').reset();
             this.load();
             
+            // Обновляем страницу прогресса, если она активна
+            if (window.App.currentPage === 'progress' && window.ProgressPage) {
+                window.ProgressPage.load();
+            }
+            
             window.Utils.showMessage('Курс успешно добавлен', 'success');
         } catch (error) {
             console.error('Error adding course:', error);
@@ -92,6 +97,11 @@ window.CoursesPage = {
             window.Modals.close('editCourseModal');
             this.load();
             
+            // Обновляем страницу прогресса, если она активна
+            if (window.App.currentPage === 'progress' && window.ProgressPage) {
+                window.ProgressPage.load();
+            }
+            
             window.Utils.showMessage('Курс успешно обновлен', 'success');
         } catch (error) {
             console.error('Error updating course:', error);
@@ -107,6 +117,12 @@ window.CoursesPage = {
             await window.API.courses.delete(courseId);
             
             this.load();
+            
+            // Обновляем страницу прогресса, если она активна
+            if (window.App.currentPage === 'progress' && window.ProgressPage) {
+                window.ProgressPage.load();
+            }
+            
             window.Utils.showMessage('Курс удален', 'success');
         } catch (error) {
             console.error('Error deleting course:', error);
