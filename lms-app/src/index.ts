@@ -565,6 +565,117 @@ api.delete('/students/:studentId/courses/:courseId', requireAuth, async (c) => {
   }
 });
 
+// Broadcast routes
+api.get('/broadcasts/recipients', requireAuth, async (c) => {
+  try {
+    const db = c.get('db');
+    const courseId = c.req.query('courseId');
+    const lessonId = c.req.query('lessonId');
+    
+    if (!courseId || !lessonId) {
+      return c.json({ error: 'Missing required parameters: courseId, lessonId' }, 400);
+    }
+
+    const recipients = await db.getStudentsNotCompletedLesson(courseId, lessonId);
+    return c.json({ recipients });
+  } catch (error: any) {
+    const db = c.get('db');
+    await db.logError({
+      source: 'api',
+      message: `Failed to get broadcast recipients: ${error.message}`,
+      meta: { error: error.toString() }
+    });
+    return c.json({ error: 'Failed to get recipients' }, 500);
+  }
+});
+
+api.post('/broadcasts/send', requireAuth, async (c) => {
+  try {
+    const db = c.get('db');
+    const adminId = c.get('adminId');
+    const body = await c.req.json();
+    
+    if (!body.courseId || !body.lessonId || !body.message) {
+      return c.json({ error: 'Missing required fields: courseId, lessonId, message' }, 400);
+    }
+
+    // Получаем студентов, которые не сдали урок
+    const recipients = await db.getStudentsNotCompletedLesson(body.courseId, body.lessonId);
+    
+    if (recipients.length === 0) {
+      return c.json({ error: 'No recipients found for this lesson' }, 400);
+    }
+
+    // Создаем запись о рассылке
+    const broadcast = await db.createBroadcast({
+      course_id: body.courseId,
+      lesson_id: body.lessonId,
+      message: body.message,
+      created_by: adminId
+    });
+
+    // Отправляем сообщения через Telegram бот
+    const botToken = c.env.TELEGRAM_BOT_TOKEN;
+    let sentCount = 0;
+
+    for (const student of recipients) {
+      try {
+        const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            chat_id: student.tgid,
+            text: body.message,
+            parse_mode: 'HTML'
+          })
+        });
+
+        if (response.ok) {
+          sentCount++;
+        }
+      } catch (error) {
+        console.error(`Failed to send message to student ${student.id}:`, error);
+      }
+    }
+
+    // Обновляем статистику рассылки
+    await db.updateBroadcastStats(broadcast.id, recipients.length, sentCount);
+
+    return c.json({ 
+      success: true, 
+      sentCount, 
+      totalRecipients: recipients.length,
+      broadcastId: broadcast.id
+    });
+  } catch (error: any) {
+    const db = c.get('db');
+    await db.logError({
+      source: 'api',
+      message: `Failed to send broadcast: ${error.message}`,
+      meta: { error: error.toString() }
+    });
+    return c.json({ error: 'Failed to send broadcast' }, 500);
+  }
+});
+
+api.get('/broadcasts/history', requireAuth, async (c) => {
+  try {
+    const db = c.get('db');
+    const broadcasts = await db.getAllBroadcasts();
+    return c.json({ broadcasts });
+  } catch (error: any) {
+    const db = c.get('db');
+    await db.logError({
+      source: 'api',
+      message: `Failed to get broadcast history: ${error.message}`,
+      meta: { error: error.toString() }
+    });
+    return c.json({ error: 'Failed to get broadcast history' }, 500);
+  }
+});
+
 // Telegram webhook route
 api.post('/telegram/webhook', async (c) => {
   try {

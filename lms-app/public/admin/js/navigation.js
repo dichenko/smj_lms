@@ -35,6 +35,7 @@ window.Navigation = {
             'courses': 'Курсы',
             'lessons': 'Управление уроками',
             'reports': 'Отчеты',
+            'broadcasts': 'Рассылки',
             'logs': 'Логи'
         };
         
@@ -70,6 +71,11 @@ window.Navigation = {
                         await window.ReportsPage.load();
                     }
                     break;
+                case 'broadcasts':
+                    if (window.BroadcastsPage) {
+                        await window.BroadcastsPage.loadBroadcastHistory();
+                    }
+                    break;
                 case 'logs':
                     if (window.LogsPage) {
                         await window.LogsPage.load();
@@ -96,6 +102,7 @@ window.Navigation = {
                     'Курсы': 'courses',
                     'Управление уроками': 'lessons',
                     'Отчеты': 'reports',
+                    'Рассылки': 'broadcasts',
                     'Логи': 'logs'
                 };
                 

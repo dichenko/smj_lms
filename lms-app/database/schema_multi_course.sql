@@ -91,6 +91,21 @@ CREATE TABLE IF NOT EXISTS admin_sessions (
     FOREIGN KEY (admin_id) REFERENCES admins(id) ON DELETE CASCADE
 );
 
+-- 9. Broadcasts table - для истории рассылок
+CREATE TABLE IF NOT EXISTS broadcasts (
+    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    course_id TEXT NOT NULL,
+    lesson_id TEXT NOT NULL,
+    message TEXT NOT NULL,
+    recipient_count INTEGER NOT NULL DEFAULT 0,
+    sent_count INTEGER NOT NULL DEFAULT 0,
+    created_by TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
+    FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES admins(id) ON DELETE CASCADE
+);
+
 -- Индексы для оптимизации запросов
 CREATE INDEX IF NOT EXISTS idx_students_tgid ON students(tgid);
 CREATE INDEX IF NOT EXISTS idx_student_courses_student ON student_courses(student_id);
@@ -106,6 +121,10 @@ CREATE INDEX IF NOT EXISTS idx_error_logs_created ON error_logs(created_at);
 CREATE INDEX IF NOT EXISTS idx_sessions_id ON admin_sessions(id);
 CREATE INDEX IF NOT EXISTS idx_sessions_expires ON admin_sessions(expires_at);
 CREATE INDEX IF NOT EXISTS idx_sessions_active ON admin_sessions(is_active);
+CREATE INDEX IF NOT EXISTS idx_broadcasts_course ON broadcasts(course_id);
+CREATE INDEX IF NOT EXISTS idx_broadcasts_lesson ON broadcasts(lesson_id);
+CREATE INDEX IF NOT EXISTS idx_broadcasts_created ON broadcasts(created_at);
+CREATE INDEX IF NOT EXISTS idx_broadcasts_created_by ON broadcasts(created_by);
 
 -- Начальные данные для тестирования
 

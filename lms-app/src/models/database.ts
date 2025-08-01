@@ -154,4 +154,28 @@ export interface ReportWithDetails extends Report {
   student: Student;
   lesson: Lesson;
   course: Course;
+}
+
+export interface Broadcast {
+  id: string;
+  course_id: string;
+  lesson_id: string;
+  message: string;
+  recipient_count: number;
+  sent_count: number;
+  created_by: string;
+  created_at: string;
+}
+
+export interface BroadcastWithDetails extends Broadcast {
+  course: Course;
+  lesson: Lesson;
+  admin: Admin;
+}
+
+export interface CreateBroadcast {
+  course_id: string;
+  lesson_id: string;
+  message: string;
+  created_by: string;
 } 

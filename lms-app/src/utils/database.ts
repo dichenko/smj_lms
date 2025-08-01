@@ -2,8 +2,8 @@
 
 import type { D1Database } from '@cloudflare/workers-types';
 import type {
-  Admin, Course, Student, StudentCourse, Lesson, Report, ErrorLog, AdminSession,
-  CreateCourse, CreateStudent, CreateStudentCourse, CreateLesson, CreateReport, ReviewReport, CreateErrorLog,
+  Admin, Course, Student, StudentCourse, Lesson, Report, ErrorLog, AdminSession, Broadcast, BroadcastWithDetails,
+  CreateCourse, CreateStudent, CreateStudentCourse, CreateLesson, CreateReport, ReviewReport, CreateErrorLog, CreateBroadcast,
   UpdateCourse, UpdateStudent, UpdateStudentCourse, UpdateLesson,
   StudentWithCourses, StudentCourseWithDetails, LessonWithCourse, ReportWithDetails
 } from '../models/database';
@@ -673,5 +673,93 @@ export class DatabaseService {
     }));
     
     return students;
+  }
+
+  // Broadcast methods
+  async getStudentsNotCompletedLesson(courseId: string, lessonId: string): Promise<Student[]> {
+    const result = await this.db.prepare(`
+      SELECT DISTINCT s.*
+      FROM students s
+      JOIN student_courses sc ON s.id = sc.student_id AND sc.is_active = 1
+      JOIN lessons l ON l.course_id = sc.course_id
+      LEFT JOIN reports r ON s.id = r.student_id AND l.id = r.lesson_id AND r.status = 'approved'
+      WHERE sc.course_id = ? AND l.id = ? AND r.id IS NULL
+      ORDER BY s.name
+    `).bind(courseId, lessonId).all<Student>();
+    
+    return result.results;
+  }
+
+  async createBroadcast(data: CreateBroadcast): Promise<Broadcast> {
+    const id = this.generateId();
+    const now = this.now();
+    
+    await this.db.prepare(
+      'INSERT INTO broadcasts (id, course_id, lesson_id, message, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind(id, data.course_id, data.lesson_id, data.message, data.created_by, now).run();
+
+    const broadcast = await this.getBroadcastById(id);
+    if (!broadcast) throw new Error('Failed to create broadcast');
+    return broadcast;
+  }
+
+  async getBroadcastById(id: string): Promise<Broadcast | null> {
+    const result = await this.db.prepare(
+      'SELECT * FROM broadcasts WHERE id = ?'
+    ).bind(id).first<Broadcast>();
+    return result || null;
+  }
+
+  async getAllBroadcasts(): Promise<BroadcastWithDetails[]> {
+    const result = await this.db.prepare(`
+      SELECT b.*, c.title as course_title, l.title as lesson_title, l.order_num as lesson_order, a.username as admin_username
+      FROM broadcasts b
+      JOIN courses c ON b.course_id = c.id
+      JOIN lessons l ON b.lesson_id = l.id
+      JOIN admins a ON b.created_by = a.id
+      ORDER BY b.created_at DESC
+    `).all();
+
+    return result.results.map((row: any) => ({
+      id: row.id,
+      course_id: row.course_id,
+      lesson_id: row.lesson_id,
+      message: row.message,
+      recipient_count: row.recipient_count,
+      sent_count: row.sent_count,
+      created_by: row.created_by,
+      created_at: row.created_at,
+      course: {
+        id: row.course_id,
+        title: row.course_title,
+        description: '',
+        created_at: '',
+        updated_at: ''
+      },
+      lesson: {
+        id: row.lesson_id,
+        course_id: row.course_id,
+        title: row.lesson_title,
+        order_num: row.lesson_order,
+        content: '',
+        created_at: '',
+        updated_at: ''
+      },
+      admin: {
+        id: row.created_by,
+        username: row.admin_username,
+        password_hash: '',
+        created_at: '',
+        updated_at: ''
+      }
+    }));
+  }
+
+  async updateBroadcastStats(id: string, recipientCount: number, sentCount: number): Promise<boolean> {
+    const result = await this.db.prepare(
+      'UPDATE broadcasts SET recipient_count = ?, sent_count = ? WHERE id = ?'
+    ).bind(recipientCount, sentCount, id).run();
+    
+    return result.meta.changes > 0;
   }
 } 
