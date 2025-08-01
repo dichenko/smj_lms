@@ -237,6 +237,9 @@ export class TelegramBot {
    * Показать экран приветствия (только один раз)
    */
   private async showWelcomeScreen(chatId: number, studentId: string): Promise<void> {
+    // Очищаем историю чата для чистого отображения приветствия
+    await this.clearChatHistory(chatId);
+    
     // Получаем текущее состояние для доступа к Telegram имени
     const currentState = await this.getStudentState(studentId);
     const telegramName = currentState?.context?.telegramName || 'Пользователь';
@@ -410,6 +413,9 @@ export class TelegramBot {
    * Показать статус завершенного курса
    */
   private async showCourseCompletedStatus(chatId: number, studentId: string): Promise<void> {
+    // Очищаем историю чата для чистого отображения статуса завершения
+    await this.clearChatHistory(chatId);
+    
     const currentState = await this.getStudentState(studentId);
     const courseId = currentState?.courseId;
     
@@ -436,7 +442,7 @@ export class TelegramBot {
       ]]
     };
 
-    await this.sendMessageWithKeyboard(chatId, message, keyboard);
+    await this.sendMessageWithKeyboard(chatId, message, keyboard, studentId);
   }
 
   /**
@@ -615,6 +621,9 @@ export class TelegramBot {
     }
 
     // Fallback для незарегистрированных пользователей
+    // Очищаем историю чата для чистого отображения сообщения
+    await this.clearChatHistory(chatId);
+    
     await this.sendMessage(chatId, 
       '💡 Используйте команду /start для начала работы с ботом'
     );
@@ -629,6 +638,9 @@ export class TelegramBot {
     if (text === '/start') {
       await this.handleStartCommand(message);
     } else {
+      // Очищаем историю чата для чистого отображения ошибки
+      await this.clearChatHistory(chatId);
+      
       await this.sendMessage(chatId, '❌ Неизвестная команда. Используйте /start');
     }
   }
@@ -643,6 +655,9 @@ export class TelegramBot {
       const student = await this.db.getStudentByTgid(tgid);
       
       if (!student) {
+        // Очищаем историю для незарегистрированных пользователей
+        await this.clearChatHistory(chatId);
+        
         await this.sendMessage(chatId,
           '👋 Добро пожаловать в SMJ LMS!\n\n' +
           '❌ Вы не зарегистрированы в системе.\n' +
@@ -651,6 +666,9 @@ export class TelegramBot {
         );
         return;
       }
+
+      // Очищаем историю чата при команде /start для зарегистрированных пользователей
+      await this.clearChatHistory(chatId);
 
       // Получаем или инициализируем состояние студента
       let studentState = await this.getStudentState(student.id);
@@ -679,6 +697,9 @@ export class TelegramBot {
     try {
       const student = await this.db.getStudentById(studentId);
       if (!student) return;
+
+      // Очищаем историю чата для чистого отображения главного меню
+      await this.clearChatHistory(chatId);
 
       // Получаем все курсы студента через новую таблицу student_courses
       const studentCourses = await this.db.getStudentCourses(studentId);
@@ -748,6 +769,9 @@ export class TelegramBot {
   // Показать текущий урок курса или статус завершения
   private async showCurrentLesson(chatId: number, studentId: string, courseId: string): Promise<void> {
     try {
+      // Очищаем историю чата для чистого отображения урока
+      await this.clearChatHistory(chatId);
+      
       const student = await this.db.getStudentById(studentId);
       const course = await this.db.getCourseById(courseId);
       const lessons = await this.db.getLessonsByCourse(courseId);
@@ -830,7 +854,7 @@ export class TelegramBot {
         ]
       };
 
-      await this.sendMessageWithKeyboard(chatId, message, keyboard);
+      await this.sendMessageWithKeyboard(chatId, message, keyboard, studentId);
 
     } catch (error: any) {
       console.error('Error showing lesson:', error);
@@ -874,6 +898,9 @@ export class TelegramBot {
 
   // Запрос на отправку отчета
   private async handleSubmitRequest(chatId: number, studentId: string, lessonId: string): Promise<void> {
+    // Очищаем историю чата для чистого отображения формы отправки
+    await this.clearChatHistory(chatId);
+    
     await this.sendMessage(chatId,
       '📝 **Отправка отчета**\n\n' +
       'Отправьте файл (документ, изображение) с вашим отчетом.\n\n' +
@@ -895,6 +922,9 @@ export class TelegramBot {
     try {
       const student = await this.db.getStudentByTgid(tgid);
       if (!student) {
+        // Очищаем историю чата для чистого отображения ошибки
+        await this.clearChatHistory(chatId);
+        
         await this.sendMessage(chatId, '❌ Вы не зарегистрированы в системе');
         return;
       }
@@ -929,6 +959,9 @@ export class TelegramBot {
 
       // Принимаем файлы только в состоянии ожидания отправки
       if (!studentState || studentState.state !== StudentState.AWAITING_SUBMISSION) {
+        // Очищаем историю чата для чистого отображения ошибки
+        await this.clearChatHistory(chatId);
+        
         await this.sendMessage(chatId, 
           `❌ Сначала выберите урок и нажмите "📝 Сдать отчет"\n\n` +
           `🔍 Отладка: Ваше состояние - ${studentState ? studentState.state : 'не найдено'}`
@@ -943,6 +976,9 @@ export class TelegramBot {
       // Используем курс из состояния студента, а не ищем среди всех курсов
       const targetCourseId = studentState.courseId;
       if (!targetCourseId) {
+        // Очищаем историю чата для чистого отображения ошибки
+        await this.clearChatHistory(chatId);
+        
         await this.sendMessage(chatId, '❌ Не найден текущий курс. Попробуйте выбрать курс заново.');
         return;
       }
@@ -953,6 +989,9 @@ export class TelegramBot {
       const studentCourse = studentCourses.find(sc => sc.course_id === targetCourseId && sc.is_active);
 
       if (!course || !studentCourse) {
+        // Очищаем историю чата для чистого отображения ошибки
+        await this.clearChatHistory(chatId);
+        
         await this.sendMessage(chatId, '❌ Курс не найден или недоступен');
         return;
       }
@@ -974,6 +1013,9 @@ export class TelegramBot {
       }
 
       if (!currentLesson) {
+        // Очищаем историю чата для чистого отображения ошибки
+        await this.clearChatHistory(chatId);
+        
         await this.sendMessage(chatId, '❌ Все уроки в этом курсе уже завершены');
         return;
       }
@@ -994,6 +1036,9 @@ export class TelegramBot {
           lesson_id: currentLesson.id
         });
       } else {
+        // Очищаем историю чата для чистого отображения ошибки
+        await this.clearChatHistory(chatId);
+        
         await this.sendMessage(chatId, '❌ Отчет для этого урока уже отправлен');
         
         // Возвращаем в главное меню
@@ -1003,6 +1048,9 @@ export class TelegramBot {
       }
 
       if (!report) {
+        // Очищаем историю чата для чистого отображения ошибки
+        await this.clearChatHistory(chatId);
+        
         await this.sendMessage(chatId, '❌ Ошибка при создании отчета');
         return;
       }
@@ -1255,9 +1303,13 @@ export class TelegramBot {
       if (response.ok && studentId) {
         const result = await response.json();
         if (result.result?.message_id) {
-          // Сохраняем ID сообщения в состоянии студента
+          // Добавляем ID сообщения к списку для удаления
+          const currentState = await this.getStudentState(studentId);
+          const currentMessageIds = currentState?.context?.messageIds || [];
+          const newMessageIds = [...currentMessageIds, result.result.message_id];
+          
           await this.transitionStudentState(studentId, 'track_message', {
-            context: { messageId: result.result.message_id }
+            context: { messageIds: newMessageIds }
           });
         }
       }
