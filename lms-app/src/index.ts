@@ -326,6 +326,45 @@ api.delete('/courses/:id', async (c) => {
 });
 
 // Lessons routes
+api.get('/lessons', requireAuth, async (c) => {
+  try {
+    const db = c.get('db');
+    
+    // Получаем все курсы
+    const courses = await db.getAllCourses();
+    
+    // Получаем уроки для каждого курса
+    const allLessons = [];
+    for (const course of courses) {
+      const lessons = await db.getLessonsByCourse(course.id);
+      for (const lesson of lessons) {
+        allLessons.push({
+          ...lesson,
+          course: course
+        });
+      }
+    }
+    
+    // Сортируем уроки по курсу и порядку
+    allLessons.sort((a, b) => {
+      if (a.course.title !== b.course.title) {
+        return a.course.title.localeCompare(b.course.title);
+      }
+      return a.order_num - b.order_num;
+    });
+    
+    return c.json({ lessons: allLessons });
+  } catch (error: any) {
+    const db = c.get('db');
+    await db.logError({
+      source: 'api',
+      message: `Failed to get all lessons: ${error.message}`,
+      meta: { error: error.toString() }
+    });
+    return c.json({ error: 'Failed to get lessons' }, 500);
+  }
+});
+
 api.get('/courses/:courseId/lessons', async (c) => {
   try {
     const db = c.get('db');
@@ -358,7 +397,7 @@ api.post('/courses/:courseId/lessons', async (c) => {
   }
 });
 
-api.put('/lessons/:id', async (c) => {
+api.put('/lessons/:id', requireAuth, async (c) => {
   try {
     const db = c.get('db');
     const id = c.req.param('id');
@@ -371,11 +410,17 @@ api.put('/lessons/:id', async (c) => {
     
     return c.json({ lesson });
   } catch (error: any) {
+    const db = c.get('db');
+    await db.logError({
+      source: 'api',
+      message: `Failed to update lesson: ${error.message}`,
+      meta: { error: error.toString() }
+    });
     return c.json({ error: 'Failed to update lesson' }, 500);
   }
 });
 
-api.delete('/lessons/:id', async (c) => {
+api.delete('/lessons/:id', requireAuth, async (c) => {
   try {
     const db = c.get('db');
     const id = c.req.param('id');
@@ -387,6 +432,12 @@ api.delete('/lessons/:id', async (c) => {
     
     return c.json({ success: true });
   } catch (error: any) {
+    const db = c.get('db');
+    await db.logError({
+      source: 'api',
+      message: `Failed to delete lesson: ${error.message}`,
+      meta: { error: error.toString() }
+    });
     return c.json({ error: 'Failed to delete lesson' }, 500);
   }
 });

@@ -368,9 +368,33 @@ export class TelegramBot {
     // Очищаем историю для аккуратного отображения
     await this.clearChatHistory(chatId);
     
-    const message = '🎉 **Урок завершен!**\n\n' +
-                   'Поздравляем! Ваш отчет принят.\n' +
-                   'Вы можете перейти к следующему уроку.';
+    let message = '🎉 **Урок завершен!**\n\n';
+    message += 'Поздравляем! Ваш отчет принят.\n\n';
+    
+    // Проверяем, есть ли еще уроки в курсе  
+    if (state.courseId) {
+      const lessons = await this.db.getLessonsByCourse(state.courseId);
+      const reports = await this.db.getAllReports();
+      const studentReports = reports.filter(r => r.student_id === studentId);
+      
+      let completedCount = 0;
+      for (const lesson of lessons) {
+        const report = studentReports.find(r => r.lesson_id === lesson.id);
+        if (report && report.status === 'approved') {
+          completedCount++;
+        }
+      }
+      
+      if (completedCount >= lessons.length) {
+        // Курс завершен - автоматически переходим к статусу завершения
+        await this.transitionStudentState(studentId, 'course_completed', { courseId: state.courseId });
+        await this.showCourseCompletedStatus(chatId, studentId);
+        return;
+      } else {
+        message += `📊 **Прогресс курса:** ${completedCount}/${lessons.length} уроков завершено\n\n`;
+        message += 'Вы можете перейти к следующему уроку.';
+      }
+    }
 
     const keyboard: InlineKeyboard = {
       inline_keyboard: [[
@@ -386,14 +410,29 @@ export class TelegramBot {
    * Показать статус завершенного курса
    */
   private async showCourseCompletedStatus(chatId: number, studentId: string): Promise<void> {
-    const message = '🏆 **Курс завершен!**\n\n' +
-                   'Поздравляем! Вы успешно прошли весь курс.\n' +
-                   'Можете приступать к изучению других курсов.';
+    const currentState = await this.getStudentState(studentId);
+    const courseId = currentState?.courseId;
+    
+    let message = '🏆 **Курс завершен!**\n\n';
+    
+    if (courseId) {
+      const course = await this.db.getCourseById(courseId);
+      const lessons = await this.db.getLessonsByCourse(courseId);
+      
+      if (course) {
+        message += `**📖 Курс:** ${course.title}\n`;
+        message += `**📊 Пройдено уроков:** ${lessons.length}/${lessons.length}\n\n`;
+      }
+    }
+    
+    message += '🎉 Поздравляем! Вы успешно прошли весь курс.\n\n';
+    message += '✅ Все задания выполнены и проверены\n';
+    message += '📚 Можете приступать к изучению других курсов\n\n';
+    message += '💡 **Примечание:** Если в курс будут добавлены новые уроки, вы получите к ним автоматический доступ.';
 
     const keyboard: InlineKeyboard = {
       inline_keyboard: [[
-        { text: '📚 Все курсы', callback_data: 'to_dashboard' },
-        { text: '🎯 Мой прогресс', callback_data: 'show_progress' }
+        { text: '📚 Все курсы', callback_data: 'to_dashboard' }
       ]]
     };
 
@@ -425,10 +464,44 @@ export class TelegramBot {
       await this.transitionStudentState(studentId, 'back_to_dashboard');
       await this.showStatefulDashboard(chatId, studentId);
       
+    } else if (data.startsWith('course_completed_')) {
+      // Пользователь нажал на завершенный курс
+      const courseId = data.replace('course_completed_', '');
+      await this.transitionStudentState(studentId, 'course_completed', { courseId });
+      await this.showCourseCompletedStatus(chatId, studentId);
+      
     } else if (data.startsWith('course_')) {
       const courseId = data.replace('course_', '');
-      await this.transitionStudentState(studentId, 'select_course', { courseId });
-      await this.showStatefulCourseView(chatId, studentId, courseId);
+      
+      // Проверяем, не завершен ли уже курс (дополнительная защита)
+      const student = await this.db.getStudentById(studentId);
+      if (!student) {
+        await this.answerCallbackQuery(callbackQuery.id, 'Студент не найден');
+        return;
+      }
+      
+      const lessons = await this.db.getLessonsByCourse(courseId);
+      const reports = await this.db.getAllReports();
+      const studentReports = reports.filter(r => r.student_id === student.id);
+      
+      // Подсчитываем завершенные уроки
+      let completedCount = 0;
+      for (const lesson of lessons) {
+        const report = studentReports.find(r => r.lesson_id === lesson.id);
+        if (report && report.status === 'approved') {
+          completedCount++;
+        }
+      }
+      
+      // Если курс завершен, показываем статус завершения
+      if (completedCount === lessons.length && lessons.length > 0) {
+        await this.transitionStudentState(studentId, 'course_completed', { courseId });
+        await this.showCourseCompletedStatus(chatId, studentId);
+      } else {
+        // Иначе показываем текущий урок
+        await this.transitionStudentState(studentId, 'select_course', { courseId });
+        await this.showStatefulCourseView(chatId, studentId, courseId);
+      }
       
     } else if (data.startsWith('submit_')) {
       const lessonId = data.replace('submit_', '');
@@ -637,15 +710,27 @@ export class TelegramBot {
         const completedLessons = courseReports.filter(r => r.status === 'approved').length;
         const totalLessons = lessons.length;
         const progress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+        const isCompleted = completedLessons === totalLessons && totalLessons > 0;
 
         message += `• **${course.title}**\n`;
-        message += `  Прогресс: ${completedLessons}/${totalLessons} (${progress}%)\n\n`;
+        if (isCompleted) {
+          message += `  ✅ **Завершен:** ${completedLessons}/${totalLessons} (100%)\n\n`;
+        } else {
+          message += `  Прогресс: ${completedLessons}/${totalLessons} (${progress}%)\n\n`;
+        }
 
-        // Каждая кнопка в отдельной строке
-        buttons.push([{
-          text: `📖 ${course.title} (${progress}%)`,
-          callback_data: `course_${course.id}`
-        }]);
+        // Разные кнопки для завершенных и незавершенных курсов
+        if (isCompleted) {
+          buttons.push([{
+            text: `🏆 ${course.title} (Завершен)`,
+            callback_data: `course_completed_${course.id}`
+          }]);
+        } else {
+          buttons.push([{
+            text: `📖 ${course.title} (${progress}%)`,
+            callback_data: `course_${course.id}`
+          }]);
+        }
       }
 
       const keyboard: InlineKeyboard = {
@@ -660,7 +745,7 @@ export class TelegramBot {
     }
   }
 
-  // Показать текущий урок курса
+  // Показать текущий урок курса или статус завершения
   private async showCurrentLesson(chatId: number, studentId: string, courseId: string): Promise<void> {
     try {
       const student = await this.db.getStudentById(studentId);
@@ -684,18 +769,35 @@ export class TelegramBot {
       // Сортируем уроки по порядку
       lessons.sort((a, b) => a.order_num - b.order_num);
 
-      // Находим первый незавершенный урок
+      // Получаем отчеты студента
       const reports = await this.db.getAllReports();
       const studentReports = reports.filter(r => r.student_id === student.id);
       
-      let currentLesson = lessons[0];
+      // Ищем первый незавершенный урок
+      let currentLesson = null;
+      let completedCount = 0;
       
       for (const lesson of lessons) {
         const report = studentReports.find(r => r.lesson_id === lesson.id);
-        if (!report || report.status !== 'approved') {
+        if (report && report.status === 'approved') {
+          completedCount++;
+        } else if (!currentLesson) {
+          // Первый незавершенный урок
           currentLesson = lesson;
-          break;
         }
+      }
+
+      // Если все уроки завершены - показываем статус завершения курса
+      if (completedCount === lessons.length) {
+        await this.transitionStudentState(studentId, 'course_completed', { courseId });
+        await this.showCourseCompletedStatus(chatId, studentId);
+        return;
+      }
+
+      // Если нет незавершенных уроков (не должно случиться, но для безопасности)
+      if (!currentLesson) {
+        await this.sendMessage(chatId, '❌ Ошибка определения текущего урока');
+        return;
       }
 
       // Проверяем статус текущего урока
@@ -704,6 +806,9 @@ export class TelegramBot {
       let message = `📖 **${course.title}**\n\n`;
       message += `**Урок ${currentLesson.order_num}: ${currentLesson.title}**\n\n`;
       message += `${currentLesson.content}\n\n`;
+      
+      // Показываем прогресс
+      message += `📊 **Прогресс:** ${completedCount}/${lessons.length} уроков завершено\n\n`;
 
       if (currentReport) {
         if (currentReport.status === 'pending') {
@@ -968,15 +1073,48 @@ export class TelegramBot {
       const lesson = await this.db.getLessonById(report.lesson_id);
       
       if (student && lesson) {
-        // Обновляем состояние студента - урок завершен
-        await this.transitionStudentState(student.id, 'report_approved', {
-          lessonId: lesson.id
-        });
+        // Получаем курс урока
+        const course = await this.db.getCourseById(lesson.course_id);
+        if (!course) {
+          await this.answerCallbackQuery(callbackQuery.id, 'Курс не найден');
+          return;
+        }
 
-        // Показываем только состояние завершенного урока (без дублирования)
-        const studentState = await this.getStudentState(student.id);
-        if (studentState) {
-          await this.showLessonCompletedStatus(parseInt(student.tgid), student.id, studentState);
+        // Проверяем, не завершился ли курс после одобрения этого урока
+        const allLessons = await this.db.getLessonsByCourse(lesson.course_id);
+        const allReports = await this.db.getAllReports();
+        const studentReports = allReports.filter(r => r.student_id === student.id);
+        
+        // Подсчитываем завершенные уроки (включая только что одобренный)
+        let completedCount = 0;
+        for (const courseLesson of allLessons) {
+          const studentReport = studentReports.find(r => r.lesson_id === courseLesson.id);
+          if (studentReport && (studentReport.status === 'approved' || studentReport.id === reportId)) {
+            completedCount++;
+          }
+        }
+        
+        // Если это был последний урок - курс завершен
+        if (completedCount === allLessons.length) {
+          // Обновляем состояние студента - курс завершен
+          await this.transitionStudentState(student.id, 'course_completed', {
+            courseId: lesson.course_id
+          });
+          
+          // Показываем статус завершения курса
+          await this.showCourseCompletedStatus(parseInt(student.tgid), student.id);
+        } else {
+          // Обычное завершение урока
+          await this.transitionStudentState(student.id, 'report_approved', {
+            lessonId: lesson.id,
+            courseId: lesson.course_id
+          });
+
+          // Показываем состояние завершенного урока
+          const studentState = await this.getStudentState(student.id);
+          if (studentState) {
+            await this.showLessonCompletedStatus(parseInt(student.tgid), student.id, studentState);
+          }
         }
       }
 
