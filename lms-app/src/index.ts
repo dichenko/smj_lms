@@ -276,7 +276,7 @@ api.get('/courses', requireAuth, async (c) => {
   }
 });
 
-api.post('/courses', async (c) => {
+api.post('/courses', requireAuth, async (c) => {
   try {
     const db = c.get('db');
     const body = await c.req.json();
@@ -292,7 +292,7 @@ api.post('/courses', async (c) => {
   }
 });
 
-api.put('/courses/:id', async (c) => {
+api.put('/courses/:id', requireAuth, async (c) => {
   try {
     const db = c.get('db');
     const id = c.req.param('id');
@@ -309,7 +309,7 @@ api.put('/courses/:id', async (c) => {
   }
 });
 
-api.delete('/courses/:id', async (c) => {
+api.delete('/courses/:id', requireAuth, async (c) => {
   try {
     const db = c.get('db');
     const id = c.req.param('id');
@@ -377,7 +377,7 @@ api.get('/courses/:courseId/lessons', async (c) => {
   }
 });
 
-api.post('/courses/:courseId/lessons', async (c) => {
+api.post('/courses/:courseId/lessons', requireAuth, async (c) => {
   try {
     const db = c.get('db');
     const courseId = c.req.param('courseId');

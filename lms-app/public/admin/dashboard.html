@@ -119,7 +119,7 @@
         <div id="courses-page" class="page" style="display: none;">
             <div class="page-header">
                 <h2 class="page-title">Управление курсами</h2>
-                <button class="btn" onclick="showAddCourseModal()">Добавить курс</button>
+                <button class="btn" onclick="window.CoursesPage.showAddModal()">Добавить курс</button>
             </div>
 
             <div class="table-container">
@@ -398,6 +398,51 @@
                 <div class="form-group">
                     <button type="submit" class="btn">💾 Сохранить изменения</button>
                     <button type="button" class="btn btn-secondary" onclick="closeModal('editLessonModal')">Отмена</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модальное окно добавления курса -->
+    <div id="addCourseModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="window.Modals.close('addCourseModal')">&times;</span>
+            <h3>📚 Добавить курс</h3>
+            <form id="addCourseForm">
+                <div class="form-group">
+                    <label>Название курса:</label>
+                    <input type="text" id="courseTitle" required>
+                </div>
+                <div class="form-group">
+                    <label>Описание курса:</label>
+                    <textarea id="courseDescription" rows="4" placeholder="Описание курса, цели, содержание..."></textarea>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn">💾 Сохранить</button>
+                    <button type="button" class="btn btn-secondary" onclick="window.Modals.close('addCourseModal')">Отмена</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модальное окно редактирования курса -->
+    <div id="editCourseModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="window.Modals.close('editCourseModal')">&times;</span>
+            <h3>✏️ Редактировать курс</h3>
+            <form id="editCourseForm">
+                <input type="hidden" id="editCourseId">
+                <div class="form-group">
+                    <label>Название курса:</label>
+                    <input type="text" id="editCourseTitle" required>
+                </div>
+                <div class="form-group">
+                    <label>Описание курса:</label>
+                    <textarea id="editCourseDescription" rows="4" placeholder="Описание курса, цели, содержание..."></textarea>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn">💾 Сохранить изменения</button>
+                    <button type="button" class="btn btn-secondary" onclick="window.Modals.close('editCourseModal')">Отмена</button>
                 </div>
             </form>
         </div>

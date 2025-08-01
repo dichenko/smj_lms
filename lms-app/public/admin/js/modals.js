@@ -139,6 +139,33 @@ window.Modals = {
         }
     },
 
+    // Показать модальное окно добавления курса
+    async showAddCourse() {
+        // Очищаем форму
+        const form = document.getElementById('addCourseForm');
+        if (form) {
+            form.reset();
+        }
+        
+        const modal = document.getElementById('addCourseModal');
+        if (modal) {
+            modal.style.display = 'block';
+        }
+    },
+
+    // Показать модальное окно редактирования курса
+    async showEditCourse(course) {
+        // Заполняем форму данными курса
+        window.Utils.setElementValue('editCourseId', course.id);
+        window.Utils.setElementValue('editCourseTitle', course.title);
+        window.Utils.setElementValue('editCourseDescription', course.description || '');
+        
+        const modal = document.getElementById('editCourseModal');
+        if (modal) {
+            modal.style.display = 'block';
+        }
+    },
+
     // Показать модальное окно добавления урока
     async showAddLesson() {
         // Убеждаемся, что курсы загружены
