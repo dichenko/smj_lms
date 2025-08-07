@@ -174,6 +174,17 @@ export class TelegramBot {
       await this.updateStudentState(studentId, updatedState);
       return updatedState;
     } else if (newData) { // Если состояние не изменилось, но есть новые данные, просто обновим контекст
+      const updatedState: StudentStateData = {
+        ...currentState,
+        ...newData,
+        context: {
+          ...currentState.context,
+          ...newData?.context,
+        }
+      };
+      await this.updateStudentState(studentId, updatedState);
+      return updatedState;
+    }
 
     return currentState;
   }
@@ -695,13 +706,6 @@ export class TelegramBot {
         if (newState) studentState = newState;
       }
 
-      // ======================= DEBUG START =======================
-      // Временно отправляем пользователю его текущее состояние для отладки.
-      // Легко удалить этот блок после завершения тестов.
-      const debugMessage = `🔧 *DEBUG:* \`\`\`json\n${JSON.stringify({ state: studentState.state, courseId: studentState.courseId, lessonId: studentState.lessonId }, null, 2)}\`\`\``;
-      await this.sendMessage(chatId, debugMessage);
-      // ======================== DEBUG END ========================
-
       // Обрабатываем в зависимости от текущего состояния
       await this.handleStudentStateBasedResponse(chatId, student.id, studentState);
 
@@ -991,55 +995,30 @@ export class TelegramBot {
         await this.showStatefulDashboard(chatId, student.id);
         return;
       }
-
-      // Используем курс из состояния студента, а не ищем среди всех курсов
-      const targetCourseId = studentState.courseId;
-      if (!targetCourseId) {
-        // Очищаем историю чата для чистого отображения ошибки
+      
+      // Ключевое изменение: используем lessonId из состояния, а не пересчитываем его.
+      // Состояние AWAITING_SUBMISSION всегда относится к конкретному уроку.
+      const targetLessonId = studentState.lessonId;
+      if (!targetLessonId) {
         await this.clearChatHistory(chatId);
-        
-        await this.sendMessage(chatId, '❌ Не найден текущий курс. Попробуйте выбрать курс заново.');
+        await this.sendMessage(chatId, '❌ Ошибка: не удалось определить урок для отчета. Пожалуйста, начните заново с выбора курса.');
+        await this.transitionStudentState(student.id, 'back_to_dashboard');
+        await this.showStatefulDashboard(chatId, student.id);
         return;
       }
 
-      // Получаем конкретный курс из состояния
-      const course = await this.db.getCourseById(targetCourseId);
-      const studentCourses = await this.db.getStudentCourses(student.id);
-      const studentCourse = studentCourses.find(sc => sc.course_id === targetCourseId && sc.is_active);
-
-      if (!course || !studentCourse) {
-        // Очищаем историю чата для чистого отображения ошибки
+      const currentLesson = await this.db.getLessonById(targetLessonId);
+      if (!currentLesson) {
         await this.clearChatHistory(chatId);
-        
-        await this.sendMessage(chatId, '❌ Курс не найден или недоступен');
+        await this.sendMessage(chatId, '❌ Урок, для которого вы сдаете отчет, не найден. Возможно, он был удален.');
+        await this.transitionStudentState(student.id, 'back_to_dashboard');
+        await this.showStatefulDashboard(chatId, student.id);
         return;
       }
 
-      // Находим текущий незавершенный урок в ЭТОМ конкретном курсе
-      const lessons = await this.db.getLessonsByCourse(targetCourseId);
-      lessons.sort((a, b) => a.order_num - b.order_num);
-
+      const currentCourse = await this.db.getCourseById(currentLesson.course_id);
       const reports = await this.db.getAllReports();
       const studentReports = reports.filter(r => r.student_id === student.id);
-
-      let currentLesson = null;
-      for (const lesson of lessons) {
-        const report = studentReports.find(r => r.lesson_id === lesson.id);
-        if (!report || report.status !== 'approved') {
-          currentLesson = lesson;
-          break;
-        }
-      }
-
-      if (!currentLesson) {
-        // Очищаем историю чата для чистого отображения ошибки
-        await this.clearChatHistory(chatId);
-        
-        await this.sendMessage(chatId, '❌ Все уроки в этом курсе уже завершены');
-        return;
-      }
-
-      const currentCourse = course;
 
       // Создаем или обновляем отчет
       const existingReport = studentReports.find(r => r.lesson_id === currentLesson.id);
