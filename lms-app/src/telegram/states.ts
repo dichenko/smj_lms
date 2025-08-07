@@ -148,46 +148,6 @@ export class StudentStateMachine {
   }
 
   /**
-   * Проверить, валиден ли переход между состояниями
-   */
-  static isValidTransition(from: StudentState, to: StudentState): boolean {
-    const validTransitions: Record<StudentState, StudentState[]> = {
-      [StudentState.UNREGISTERED]: [StudentState.WELCOME],
-      [StudentState.WELCOME]: [StudentState.DASHBOARD],
-      [StudentState.DASHBOARD]: [StudentState.COURSE_VIEW, StudentState.IDLE],
-      [StudentState.COURSE_VIEW]: [
-        StudentState.AWAITING_SUBMISSION, 
-        StudentState.DASHBOARD, 
-        StudentState.COURSE_COMPLETED
-      ],
-      [StudentState.AWAITING_SUBMISSION]: [
-        StudentState.REPORT_PENDING, 
-        StudentState.COURSE_VIEW, 
-        StudentState.DASHBOARD
-      ],
-      [StudentState.REPORT_PENDING]: [
-        StudentState.LESSON_COMPLETED, 
-        StudentState.REPORT_REJECTED,
-        StudentState.DASHBOARD
-      ],
-      [StudentState.REPORT_REJECTED]: [
-        StudentState.AWAITING_SUBMISSION, 
-        StudentState.COURSE_VIEW, 
-        StudentState.DASHBOARD
-      ],
-      [StudentState.LESSON_COMPLETED]: [
-        StudentState.COURSE_VIEW, 
-        StudentState.COURSE_COMPLETED, 
-        StudentState.DASHBOARD
-      ],
-      [StudentState.COURSE_COMPLETED]: [StudentState.DASHBOARD, StudentState.COURSE_VIEW],
-      [StudentState.IDLE]: [StudentState.DASHBOARD]
-    };
-
-    return validTransitions[from]?.includes(to) || false;
-  }
-
-  /**
    * Получить контекстные действия для состояния
    */
   static getContextualActions(state: StudentState): string[] {

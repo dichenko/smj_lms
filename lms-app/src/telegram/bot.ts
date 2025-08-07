@@ -652,6 +652,9 @@ export class TelegramBot {
     const chatId = message.chat.id;
     const tgid = message.from.id.toString();
 
+    // Порог для "устаревшего" состояния (30 дней)
+    const STALE_STATE_THRESHOLD_MS = 30 * 24 * 60 * 60 * 1000;
+
     try {
       // Проверяем, есть ли студент в базе
       const student = await this.db.getStudentByTgid(tgid);
@@ -674,8 +677,15 @@ export class TelegramBot {
 
       // Получаем или инициализируем состояние студента
       let studentState = await this.getStudentState(student.id);
+      const isStale = studentState && (new Date().getTime() - new Date(studentState.lastActivity).getTime()) > STALE_STATE_THRESHOLD_MS;
       
-      if (!studentState) {
+      // Если состояние не найдено или устарело, сбрасываем его.
+      // Это решает проблему "застрявших" пользователей и очищает старые состояния.
+      if (!studentState || isStale) {
+        if (isStale) {
+          console.log(`State for student ${student.id} is stale. Resetting.`);
+          await this.sendMessage(chatId, "👋 С возвращением! Ваша сессия была обновлена. Начинаем заново.");
+        }
         // Инициализируем состояние для нового студента (показываем приветствие только первый раз)
         const telegramName = message.from.first_name || message.from.username || 'Пользователь';
         studentState = await this.initializeStudentStateWithTelegram(student.id, undefined, true, telegramName);
@@ -684,6 +694,13 @@ export class TelegramBot {
         const newState = await this.transitionStudentState(student.id, 'auto');
         if (newState) studentState = newState;
       }
+
+      // ======================= DEBUG START =======================
+      // Временно отправляем пользователю его текущее состояние для отладки.
+      // Легко удалить этот блок после завершения тестов.
+      const debugMessage = `🔧 *DEBUG:* \`\`\`json\n${JSON.stringify({ state: studentState.state, courseId: studentState.courseId, lessonId: studentState.lessonId }, null, 2)}\`\`\``;
+      await this.sendMessage(chatId, debugMessage);
+      // ======================== DEBUG END ========================
 
       // Обрабатываем в зависимости от текущего состояния
       await this.handleStudentStateBasedResponse(chatId, student.id, studentState);
