@@ -68,6 +68,10 @@ window.DashboardApp = {
             window.ReportsPage.init();
         }
         
+        if (window.BroadcastsPage) {
+            window.BroadcastsPage.init();
+        }
+        
         if (window.LogsPage) {
             window.LogsPage.init();
         }

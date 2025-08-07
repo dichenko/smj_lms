@@ -5,7 +5,8 @@ class BroadcastsPage {
         this.courses = [];
         this.lessons = [];
         this.recipients = [];
-        this.init();
+        // Убираем автоматическую инициализацию из конструктора
+        // Инициализация будет происходить через app.js
     }
 
     async init() {
@@ -17,7 +18,12 @@ class BroadcastsPage {
         // Обработчик формы создания рассылки
         const broadcastForm = document.getElementById('broadcastForm');
         if (broadcastForm) {
-            broadcastForm.addEventListener('submit', (e) => this.handleBroadcastSubmit(e));
+            // Удаляем существующие обработчики, чтобы избежать дублирования
+            const newForm = broadcastForm.cloneNode(true);
+            broadcastForm.parentNode.replaceChild(newForm, broadcastForm);
+            
+            // Добавляем новый обработчик
+            newForm.addEventListener('submit', (e) => this.handleBroadcastSubmit(e));
         }
     }
 
@@ -173,10 +179,13 @@ class BroadcastsPage {
             return;
         }
 
-        // Показываем подтверждение
-        const confirmed = confirm(`Отправить рассылку ${this.recipients.length} студентам?\n\nКурс: ${this.courses.find(c => c.id === courseId)?.title}\nУрок: ${this.lessons.find(l => l.id === lessonId)?.title}\n\nТекст: ${message.substring(0, 100)}${message.length > 100 ? '...' : ''}`);
-        
-        if (!confirmed) return;
+        // Показываем индикатор загрузки на кнопке
+        const submitButton = document.querySelector('#broadcastForm button[type="submit"]');
+        const originalText = submitButton ? submitButton.textContent : '';
+        if (submitButton) {
+            submitButton.textContent = '📤 Отправка...';
+            submitButton.disabled = true;
+        }
 
         try {
             const response = await fetch('/api/broadcasts/send', {
@@ -195,16 +204,37 @@ class BroadcastsPage {
 
             if (data.success) {
                 showNotification(`Рассылка успешно отправлена ${data.sentCount} студентам!`, 'success');
-                closeModal('broadcastModal');
-                this.resetForm();
-                // Обновляем историю рассылок
-                this.loadBroadcastHistory();
+                
+                // Небольшая задержка перед закрытием модального окна
+                setTimeout(() => {
+                    // Закрываем модальное окно
+                    if (window.Modals && window.Modals.close) {
+                        window.Modals.close('broadcastModal');
+                    } else if (window.closeModal) {
+                        window.closeModal('broadcastModal');
+                    } else {
+                        const modal = document.getElementById('broadcastModal');
+                        if (modal) {
+                            modal.style.display = 'none';
+                        }
+                    }
+                    
+                    this.resetForm();
+                    // Обновляем историю рассылок
+                    this.loadBroadcastHistory();
+                }, 1000); // Задержка 1 секунда
             } else {
                 showNotification(data.error || 'Ошибка отправки рассылки', 'error');
             }
         } catch (error) {
             console.error('Ошибка отправки рассылки:', error);
             showNotification('Ошибка отправки рассылки', 'error');
+        } finally {
+            // Восстанавливаем кнопку
+            if (submitButton) {
+                submitButton.textContent = originalText;
+                submitButton.disabled = false;
+            }
         }
     }
 
@@ -247,9 +277,9 @@ class BroadcastsPage {
         tbody.innerHTML = broadcasts.map(broadcast => `
             <tr>
                 <td>${new Date(broadcast.created_at).toLocaleString('ru-RU')}</td>
-                <td>${broadcast.course_title}</td>
-                <td>Урок ${broadcast.lesson_order}: ${broadcast.lesson_title}</td>
-                <td>${broadcast.recipient_count}</td>
+                <td>${broadcast.course?.title || 'Неизвестно'}</td>
+                <td>Урок ${broadcast.lesson?.order_num || '?'}: ${broadcast.lesson?.title || 'Неизвестно'}</td>
+                <td>${broadcast.recipient_count || 0} / ${broadcast.sent_count || 0}</td>
                 <td>${broadcast.message.length > 50 ? broadcast.message.substring(0, 50) + '...' : broadcast.message}</td>
             </tr>
         `).join('');

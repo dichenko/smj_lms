@@ -14,6 +14,11 @@ window.Utils = {
         setTimeout(() => message.remove(), 5000);
     },
 
+    // Показать уведомление (алиас для showMessage)
+    showNotification(text, type = 'info') {
+        this.showMessage(text, type);
+    },
+
     // Получение текста статуса урока
     getLessonStatusText(status) {
         return window.STATUS_TEXT[status] || status;
@@ -149,3 +154,7 @@ window.Utils = {
         return [...new Set(array)];
     }
 };
+
+// Глобальные функции для обратной совместимости
+window.showMessage = (text, type) => window.Utils.showMessage(text, type);
+window.showNotification = (text, type) => window.Utils.showNotification(text, type);
