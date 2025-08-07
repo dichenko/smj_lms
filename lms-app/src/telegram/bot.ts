@@ -117,6 +117,8 @@ export class TelegramBot {
    * Обновить состояние студента
    */
   private async updateStudentState(studentId: string, stateData: StudentStateData): Promise<void> {
+    // Обновляем время последней активности при каждом сохранении состояния.
+    // Это время обработки запроса воркером, а не время действия пользователя.
     await StudentStateMachine.setState(this.kv, studentId, stateData);
   }
 
@@ -155,9 +157,9 @@ export class TelegramBot {
     const currentState = await this.getStudentState(studentId);
     if (!currentState) return null;
 
-    const nextState = StudentStateMachine.getNextState(currentState.state, action);
+    const nextState = StudentStateMachine.getNextState(currentState.state, action, newData?.context);
     
-    if (StudentStateMachine.isValidTransition(currentState.state, nextState)) {
+    if (nextState !== currentState.state) { // Переход считается валидным, если состояние изменилось
       const updatedState: StudentStateData = {
         ...currentState,
         ...newData,
@@ -171,7 +173,7 @@ export class TelegramBot {
       
       await this.updateStudentState(studentId, updatedState);
       return updatedState;
-    }
+    } else if (newData) { // Если состояние не изменилось, но есть новые данные, просто обновим контекст
 
     return currentState;
   }
